@@ -1,0 +1,37 @@
+# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
+
+client_id = "10843cb955f41d85e6be25f788ef525a"
+name = "LABLLD"
+application_url = "https://app.lablld.com/api/shopify/auth"
+embedded = false
+
+[build]
+automatically_update_urls_on_dev = false
+dev_store_url = "lablld-test.myshopify.com"
+
+[webhooks]
+api_version = "2026-01"
+
+  [[webhooks.subscriptions]]
+  compliance_topics = ["customers/data_request"]
+  uri = "/api/webhooks/shopify/customers/data-request"
+
+  [[webhooks.subscriptions]]
+  compliance_topics = ["customers/redact"]
+  uri = "/api/webhooks/shopify/customers/redact"
+
+  [[webhooks.subscriptions]]
+  compliance_topics = ["shop/redact"]
+  uri = "/api/webhooks/shopify/shop/redact"
+
+[access_scopes]
+# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
+scopes = "read_fulfillments,write_fulfillments,read_assigned_fulfillment_orders,write_assigned_fulfillment_orders,write_inventory,read_orders,read_products,write_products"
+optional_scopes = [ ]
+
+[auth]
+redirect_urls = [
+  "https://app.lablld.com/api/shopify/callback",
+  "http://localhost:3000/api/shopify/callback"
+]
+
