@@ -279,16 +279,20 @@
     {
       "id": "CODE-fix-order-items-type",
       "title": "types/index.ts:216 merchant_product_id must be string | null; two insert sites write null, so any non-null dereference is a latent crash on sample and admin-created orders",
-      "lane": "in_flight",
+      "lane": "shipped",
       "home_lane": "in_flight",
-      "status": "todo",
+      "status": "shipped",
       "priority": "high",
-      "owner_terminal": "unassigned",
+      "owner_terminal": "pink",
       "gate": "green_self_merge",
       "blocked_on": null,
       "last_checkpoint": "2026-08-20",
-      "evidence": null,
-      "notes": "P1 · Source: schema notes D1. A real latent bug, not a typing nicety."
+      "evidence": {
+        "kind": "pr",
+        "ref": "#7",
+        "at": "2026-08-20"
+      },
+      "notes": "P1 · Source: schema notes D1. A real latent bug, not a typing nicety. SHIPPED 2026-08-20 by PINK, PR #7, self-merged on green under the merge-authority grant (green_self_merge, non-visual, ships on merge with the PR as evidence). THREE SOURCES AGREED AGAINST THE TYPE: migration 0001 line 414 declares the column nullable and comments on this exact contradiction; SCHEMA-RECONSTRUCTION-NOTES.md ruling D1 records it and defers the correction to this card; and the code writes null at app/(merchant)/orders/new/actions.ts:92 (sample orders, always) and app/admin/orders/new/actions.ts:49 (admin orders, whenever the merchant has no matching merchant_product). THE CARD IMPLIES MORE THAN IS TRUE AND THIS IS RECORDED RATHER THAN GLOSSED: tsc reports ZERO new errors after the change, because nothing dereferences this field today. Every occurrence is a write, a same-named local in the dead /api/mockups/generate path (CODE-remove-dead-integrations), or the joined merchant_product object, which is separately optional and already read through optional chaining. So no live crash was fixed. What was fixed is a type that would have let the compiler accept the first dereference someone wrote, on exactly the two order kinds where the value is null. It also removes the last disagreement between types/index.ts and the reconstructed schema, which matters because the schema notes cite this field as their example of types/index.ts not being authoritative."
     },
     {
       "id": "CODE-resend-lazy-init",
