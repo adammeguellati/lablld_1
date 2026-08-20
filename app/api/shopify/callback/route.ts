@@ -10,6 +10,9 @@ export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl
   const shop = searchParams.get('shop')
   const code = searchParams.get('code')
+  // Read and discarded without verification; SEC-shopify-oauth-state closes
+  // this. Kept rather than deleted so the open hole stays visible in code.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const state = searchParams.get('state')
 
   if (!shop || !code) {

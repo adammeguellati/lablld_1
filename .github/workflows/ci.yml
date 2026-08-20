@@ -1,0 +1,63 @@
+# LABLLD CI. Job ids are the check names Ivan types into branch protection:
+# typecheck, lint, build. Renaming a job renames its required check and
+# silently stops enforcing it, so these three ids must not drift.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# A superseded run on the same ref is cancelled. Stacked PRs re-run on every
+# push to a base, so without this the queue fills with runs nobody reads.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx tsc --noEmit
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx eslint . --max-warnings=0
+
+  build:
+    runs-on: ubuntu-latest
+    # PLACEHOLDERS, NEVER SECRETS. next build inlines NEXT_PUBLIC_* at build
+    # time and fails on their absence, so each one needs a syntactically valid
+    # value and nothing more. None of these reach a real service: the Supabase
+    # host does not resolve, and the keys are not credentials. If a job ever
+    # needs a real value, that is a signal the build is reaching production,
+    # which it must not do.
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+      NEXT_PUBLIC_SUPABASE_URL: 'https://placeholder.supabase.co'
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'placeholder-publishable-key'
+      SUPABASE_SECRET_KEY: 'placeholder-secret-key'
+      NEXT_PUBLIC_APP_URL: 'https://placeholder.invalid'
+      NEXT_PUBLIC_WOMPI_PUBLIC_KEY: 'pub_test_placeholder'
+      NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: 'pk_test_placeholder'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run build

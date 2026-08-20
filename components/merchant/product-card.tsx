@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { formatCOP, isProductNew, calculateMerchantPrice } from '@/lib/utils'
+import { formatCOP, calculateMerchantPrice } from '@/lib/utils'
 import type { Product, Plan } from '@/types'
 
 const FORMAT_LABELS: Record<string, string> = {

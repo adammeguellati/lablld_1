@@ -1,6 +1,5 @@
 'use client'
 
-import { Fragment } from 'react'
 
 interface Props {
   mode: 'standard' | 'express'

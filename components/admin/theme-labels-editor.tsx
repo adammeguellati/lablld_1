@@ -15,10 +15,9 @@ function emptyLabel(): ThemeLabel {
 }
 
 function ThemeLabelCard({
-  label, index, onUpdate, onRemove,
+  label, onUpdate, onRemove,
 }: {
   label: ThemeLabel
-  index: number
   onUpdate: (field: keyof ThemeLabel, value: string) => void
   onRemove: () => void
 }) {
@@ -129,7 +128,6 @@ export function ThemeLabelsEditor({ initialData = [], onChange }: Props) {
           <ThemeLabelCard
             key={label.id}
             label={label}
-            index={i}
             onUpdate={(field, value) => update(i, field, value)}
             onRemove={() => remove(i)}
           />

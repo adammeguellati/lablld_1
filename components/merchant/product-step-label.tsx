@@ -89,6 +89,11 @@ export function ProductStepLabel({ productName, dims, canvaUrl, themeLabels, lab
                   <button key={t.id} onClick={() => selectTemplate(t.name, t.file_url)}
                     className={`rounded-xl border-2 overflow-hidden text-left transition-all ${selectedTemplate?.url === t.file_url ? 'border-emerald-500' : 'border-gray-200 hover:border-gray-400'}`}>
                     <div className="aspect-video bg-gray-100 overflow-hidden">
+                      {/* User-uploaded storage URL in a fixed-size container. Converting to
+                          next/image is deferred to the UI wave, not skipped: SEC-labels-bucket
+                          moves these to signed URLs, which changes the shape the optimizer's
+                          remotePatterns must match, so converting now would be redone. */}
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       {t.preview_url && <img src={t.preview_url} alt={t.name} className="w-full h-full object-cover" />}
                     </div>
                     <div className="px-3 py-2.5">

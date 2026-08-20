@@ -325,16 +325,16 @@
     {
       "id": "CODE-fix-lint-errors",
       "title": "18 ESLint errors, including 4 react-hooks/refs errors from writing ref.current during render in catalog-filters.tsx:30-31 and merchant-products-filters.tsx:19-20; the same bug was cloned along with the copy-pasted component",
-      "lane": "loose_ends",
-      "home_lane": "loose_ends",
-      "status": "todo",
+      "lane": "in_flight",
+      "home_lane": "in_flight",
+      "status": "in_flight",
       "priority": "medium",
-      "owner_terminal": "unassigned",
+      "owner_terminal": "pink",
       "gate": "green_self_merge",
       "blocked_on": null,
       "last_checkpoint": "2026-08-20",
       "evidence": null,
-      "notes": "P2 · Source: audit §8.6, §8.4. ADDED-BY-SWEEP. Blocks INFRA-ci-and-tests: eslint cannot be a required check while it fails."
+      "notes": "P2 · Source: audit §8.6, §8.4. ADDED-BY-SWEEP. Blocks INFRA-ci-and-tests: eslint cannot be a required check while it fails. PROMOTED from loose ends to the active queue and WORKED 2026-08-20 by PINK inside PR #5, because Ivan's acceptance criterion for INFRA-ci-and-tests is that lint be green on the PR itself, and a red lint cannot become a required check. MEASURED RATHER THAN TRUSTED: the audit's figure of 18 errors is exact for application source. The raw repo-wide run reports 20 errors and 55 warnings, but design_handoff_lablld_dashboard/ is GITIGNORED and absent in CI, which accounts for the difference. Ivan's spec is --max-warnings=0, so 21 warnings became blocking too, not just the 18 errors. FIXED: 14 react/no-unescaped-entities (literal quotes in JSX on privacidad, terminos, admin settings); 4 react-hooks/refs, the real bug, in the two copy-pasted filter components, by moving the router and searchParams ref writes out of render into an effect, which preserves the debounce dependency array of [q] exactly; 4 unused imports/vars removed, including a dead index prop on ThemeLabelCard that the call site passed and the component never read. NOT FIXED, deferred with reasons in code: 3 @next/next/no-img-element on user-uploaded storage URLs in fixed-size containers. Converting to next/image is a UI decision and SEC-labels-bucket will move those URLs to signed URLs, which changes the shape the optimizer's remotePatterns must match, so converting now would be redone. NOT DELETED: the unused `state` read at app/api/shopify/callback/route.ts is the in-code evidence for SEC-shopify-oauth-state, so it carries a targeted disable naming that card instead of being removed. RESULT: npx eslint . --max-warnings=0 exits 0 and npx tsc --noEmit exits 0."
     },
     {
       "id": "CODE-remove-dead-integrations",
@@ -439,14 +439,14 @@
       "title": "Zero tests, zero CI, and eslint currently fails; wire tsc --noEmit + eslint on every PR first (half a day), then Playwright smoke coverage of register -> plan -> pay -> publish -> order",
       "lane": "in_flight",
       "home_lane": "in_flight",
-      "status": "todo",
+      "status": "in_flight",
       "priority": "high",
-      "owner_terminal": "unassigned",
+      "owner_terminal": "pink",
       "gate": "green_self_merge",
       "blocked_on": null,
       "last_checkpoint": "2026-08-20",
       "evidence": null,
-      "notes": "P1 · Source: audit R4. ADDED-BY-SWEEP. npm, not pnpm. Add node docs/board/validate-board.mjs docs/board/lablld-board.json to the same workflow: BOARD-SPEC.md says a red validator is a red gate, and today nothing runs it. Depends on CODE-fix-lint-errors."
+      "notes": "P1 · Source: audit R4. ADDED-BY-SWEEP. npm, not pnpm. Add node docs/board/validate-board.mjs docs/board/lablld-board.json to the same workflow: BOARD-SPEC.md says a red validator is a red gate, and today nothing runs it. Depends on CODE-fix-lint-errors. WORKED 2026-08-20 by PINK, PR #5, moved to the FRONT of W0 by Ivan on 2026-08-20 so the checks exist and are green on a real PR before he enables branch protection and self-merge. SCOPE per Ivan, minimal viable: .github/workflows/ci.yml on pull_request and push to main, three jobs whose ids are exactly typecheck (npx tsc --noEmit), lint (npx eslint . --max-warnings=0) and build (npm run build). Job ids are the check names he types into branch protection, so renaming a job silently stops enforcing its check; the file says so and a check asserts the three ids. NO TEST JOB, deliberately, per his ruling: zero tests exist and an empty job would be a fake check. E2E is BACKLOG-e2e-smoke. This means the card's own title still promises Playwright coverage it does not deliver; that half moved to the new card rather than being dropped. BUILD ENV: six placeholder values live in the workflow file, never secrets, because next build inlines NEXT_PUBLIC_* and fails on their absence. None reach a real service. Proven locally: a clean build with only those six succeeds and emits a BUILD_ID. If a job ever needs a real value that is a signal the build is reaching production, which it must not. PREREQUISITE FOLDED IN: lint cannot be a required check while red, so CODE-fix-lint-errors is carried in this same PR. TWO SCOPING DECISIONS worth Ivan's eye, both in eslint.config.mjs: docs/** is ignored because board tooling is ported byte-for-byte from OsteoJP (PORT-NOTES.md) and linting it to this app's standard would mean editing it away from upstream; design_handoff_lablld_dashboard/** is ignored because it is gitignored and absent in CI, so linting it locally only made local disagree with CI. REBASED ONTO MAIN, not stacked: PRs #1-#4 form a stack and this one must be mergeable first. Its board edits are therefore based on main's board and will conflict with the stack. Resolution after this merges is `git merge main` into each stacked branch, which needs no force-push."
     },
     {
       "id": "INFRA-supabase-schema-dump",
@@ -1038,6 +1038,20 @@
       "last_checkpoint": "2026-08-20",
       "evidence": null,
       "notes": "P3 · Source: design inventory §3 item 18 (BUILD-ORDER.md Step 9 acceptance check). Today both sides require a refresh. WAITS ON: an Adam ruling on whether live updates are worth a Supabase realtime channel, which is also a cost question on the paid tier being bought under INFRA-supabase-backups."
+    },
+    {
+      "id": "BACKLOG-e2e-smoke",
+      "title": "Playwright smoke coverage on every PR: login, catalog, and the admin orders list, as a fourth required check once it is real",
+      "lane": "loose_ends",
+      "home_lane": "loose_ends",
+      "priority": "medium",
+      "status": "todo",
+      "owner_terminal": "unassigned",
+      "gate": "green_self_merge",
+      "evidence": null,
+      "blocked_on": null,
+      "last_checkpoint": "2026-08-20",
+      "notes": "Split out of INFRA-ci-and-tests by Ivan on 2026-08-20, with the reasoning recorded because it is the point: zero tests exist, and an empty e2e job would be a FAKE CHECK. A required check that asserts nothing is worse than no check, because it reads as coverage. SCOPE when built: Playwright, running on pull_request, covering login, catalog, and the admin orders list. It becomes a fourth branch-protection check only once it genuinely fails when the app breaks. DEPENDS ON: a seeded, non-production target to run against. It must not point at production; no LABLLD terminal has production access and that is permanent doctrine as of 2026-08-20. ALREADY AVAILABLE TO IT: two verification probes were written and passed during W0 but are NOT committed, because this card's runner does not exist yet. First, the fulfillment HMAC boundary (6 cases plus a negative arm that removes the guard and requires the forged request to be accepted) written for SEC-shopify-fulfillment-endpoint. Second, isAdmin fail-open coverage written for SEC-admin-layout-gate. Both should be committed as unit tests when a runner lands; they are the closest thing this repo has to the disable-the-property standard in BOARD-SPEC.md."
     }
   ]
 }
