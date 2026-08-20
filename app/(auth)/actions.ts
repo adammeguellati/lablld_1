@@ -1,10 +1,11 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
-import { createAdminClient } from '@/lib/supabase/admin'
+import { safeServerClient, safeAdminClient } from '@/lib/supabase/safe'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import { isAdmin } from '@/lib/utils'
+
+const CONFIG_ERROR = 'El servicio no está disponible en este momento. Intenta de nuevo más tarde.'
 
 function translateAuthError(msg: string): string {
   if (msg.includes('sending confirmation email')) return 'Error al enviar el correo de confirmación. Intenta de nuevo.'
@@ -14,6 +15,9 @@ function translateAuthError(msg: string): string {
   if (msg.includes('Too many requests')) return 'Demasiados intentos. Espera unos minutos e intenta de nuevo.'
   if (msg.includes('Password should be')) return 'La contraseña debe tener al menos 6 caracteres.'
   if (msg.includes('Unable to validate email')) return 'Correo electrónico inválido.'
+  if (msg.includes('Invalid path specified in request URL')) return CONFIG_ERROR
+  // Unknown messages pass through: signup gating is configured in Supabase Auth
+  // and its message arrives here, so a generic fallback would swallow it.
   return msg
 }
 
@@ -43,16 +47,19 @@ export async function registerAction(
   }
 
   const { full_name, email, password } = parsed.data
-  const admin = createAdminClient()
+  const admin = safeAdminClient()
+  if (!admin) return { error: CONFIG_ERROR }
 
-  const { count } = await admin
+  const { count, error: lookupError } = await admin
     .from('merchants')
     .select('id', { count: 'exact', head: true })
     .eq('email', email)
 
+  if (lookupError) return { error: CONFIG_ERROR }
   if (count && count > 0) return { error: 'Este correo ya tiene una cuenta registrada.' }
 
-  const supabase = await createClient()
+  const supabase = await safeServerClient()
+  if (!supabase) return { error: CONFIG_ERROR }
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.lablld.com'
   const { data, error } = await supabase.auth.signUp({
@@ -112,7 +119,8 @@ export async function loginAction(
   }
 
   const { email, password } = parsed.data
-  const supabase = await createClient()
+  const supabase = await safeServerClient()
+  if (!supabase) return { error: CONFIG_ERROR }
 
   const { data, error } = await supabase.auth.signInWithPassword({ email, password })
   if (error) return { error: translateAuthError(error.message) }
@@ -121,9 +129,9 @@ export async function loginAction(
 
   if (next && next.startsWith('/')) redirect(next)
 
-  const admin = createAdminClient()
-  const { count } = await admin.from('merchants').select('id', { count: 'exact', head: true }).eq('id', data.user.id)
-  if (!count || count === 0) {
+  const admin = safeAdminClient()
+  const { count } = (await admin?.from('merchants').select('id', { count: 'exact', head: true }).eq('id', data.user.id)) ?? {}
+  if (admin && (!count || count === 0)) {
     await admin.from('merchants').insert({
       id: data.user.id,
       email: data.user.email ?? email,
@@ -136,7 +144,7 @@ export async function loginAction(
 }
 
 export async function logoutAction() {
-  const supabase = await createClient()
-  await supabase.auth.signOut()
+  const supabase = await safeServerClient()
+  await supabase?.auth.signOut()
   redirect('/login')
 }
