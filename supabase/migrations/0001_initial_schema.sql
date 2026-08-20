@@ -289,14 +289,16 @@ create index merchant_products_label_status_idx on merchant_products (label_stat
 -- -----------------------------------------------------------------------------
 -- merchant_labels — the standalone label library and its approval queue
 -- Absent from CLAUDE.md entirely. types/index.ts:154-162.
--- NOTE: app/api/admin/merchants/[id]/route.ts:44-69 deletes orders, order_items,
+--
+-- app/api/admin/merchants/[id]/route.ts:44-69 deletes orders, order_items,
 -- shopify_stores and merchant_products when removing a merchant, but NOT
--- merchant_labels. With on delete restrict that DELETE will now fail rather than
--- orphan rows. See the CONFIDENCE section — this is a real behaviour change.
+-- merchant_labels. Under the on-delete-restrict convention used by every other
+-- FK in this file, that DELETE would fail. Resolved by ruling — see below.
 -- -----------------------------------------------------------------------------
 create table merchant_labels (
   id               uuid primary key default gen_random_uuid(),
-  merchant_id      uuid         not null references merchants (id) on delete restrict,
+  -- CASCADE per ruling 2026-08-20: label is worthless without merchant; code delete-chain fix tracked separately
+  merchant_id      uuid         not null references merchants (id) on delete cascade,
   label_url        text         not null,
   name             text,
   status           label_status not null default 'pending',
@@ -454,20 +456,21 @@ on conflict (id) do nothing;
 -- prefixed with the owning merchant's uuid, which is what makes the per-folder
 -- storage policies in 0002 possible.
 --
--- TODO(privacy): authored PRIVATE, which does NOT match production today.
---   CODE-AUDIT-2026-08.md §5 ("Storage buckets referenced") records that
---   CLAUDE.md declares both buckets public with hand-made policies that exist
---   in no repository. A public `labels` bucket means any merchant's proprietary
---   label artwork is readable by anyone holding or guessing the URL — the whole
---   point of the product is that these designs are the merchant's own brand.
---   Authoring it private is the safe reconstruction.
+-- PUBLIC to match production for parity verification. Flip to private + signed URLs tracked as security card SEC-labels-bucket. Do not treat this as accepted.
 --
---   BREAKING: this WILL break label display until the callers are migrated.
---   components/merchant/label-uploader.tsx:42 and label-upload-form.tsx:34 both
---   call getPublicUrl(), which returns a working URL only for a public bucket.
---   Private buckets need createSignedUrl(). Migrating those two call sites is
---   out of scope for a schema reconstruction and is NOT done here.
---   Flip `public` to true if you need to match production exactly today.
+--   Context for the reader: CODE-AUDIT-2026-08.md §5 ("Storage buckets
+--   referenced") records that CLAUDE.md declares both buckets public with
+--   hand-made policies that exist in no repository. A public `labels` bucket
+--   means any merchant's proprietary label artwork is readable by anyone
+--   holding or guessing the URL. Public here is a deliberate parity choice for
+--   diffing this reconstruction against the live project, not a judgement that
+--   the exposure is acceptable.
+--
+--   What SEC-labels-bucket has to carry: flipping this to false also requires
+--   migrating components/merchant/label-uploader.tsx:42 and
+--   label-upload-form.tsx:34 off getPublicUrl() and onto createSignedUrl(),
+--   plus every surface that renders a stored label_url, including the admin
+--   label queue. getPublicUrl() returns a working URL only for a public bucket.
 insert into storage.buckets (id, name, public)
-values ('labels', 'labels', false)
+values ('labels', 'labels', true)
 on conflict (id) do nothing;

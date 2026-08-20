@@ -17,11 +17,16 @@
 -- these policies exist to catch. They are written to match the app's current
 -- behaviour exactly, so enabling them should change nothing that works today.
 --
--- The one place RLS IS load-bearing right now is Storage. Label and image
+-- The one place RLS IS load-bearing right now is Storage WRITES. Label and image
 -- uploads run in the browser against the publishable key
 -- (components/merchant/label-uploader.tsx:34 uses lib/supabase/client.ts), so
--- the storage.objects policies at the bottom of this file are enforced on every
--- upload. Get those wrong and uploads break immediately.
+-- the storage.objects insert/update/delete policies at the bottom of this file
+-- are enforced on every upload. Get those wrong and uploads break immediately.
+--
+-- Storage READS are not governed by RLS at all: both buckets are public as of
+-- the 2026-08-20 parity ruling, so objects are served over the public CDN path
+-- without policy evaluation. The select policies below say `to public` to match
+-- that, rather than pretending to a restriction the bucket flag overrides.
 --
 -- NOT APPLIED ANYWHERE. Syntax-validated against a throwaway local Postgres 16
 -- container only.
@@ -244,11 +249,21 @@ create policy platform_settings_admin_all on platform_settings
 -- =============================================================================
 
 -- -----------------------------------------------------------------------------
--- labels — private in 0001. Every path begins with the owning merchant's uuid:
+-- labels — PUBLIC in 0001, per the 2026-08-20 parity ruling. Every path begins
+-- with the owning merchant's uuid:
 --   {merchantId}/{productId}/{ts}.{ext}  (components/merchant/label-uploader.tsx:35)
 --   {merchantId}/brand/{ts}.{ext}        (components/merchant/label-upload-form.tsx:30)
--- so (storage.foldername(name))[1] is the owner and the whole policy set follows
--- from the path convention the code already uses.
+-- so (storage.foldername(name))[1] is the owner, and every WRITE below is scoped
+-- to it. Writes are the part RLS still governs.
+--
+-- READS ARE NOT GOVERNED HERE. Because the bucket is public, Supabase Storage
+-- serves objects over the public CDN path without evaluating storage.objects
+-- RLS at all — getPublicUrl() at label-uploader.tsx:42 and
+-- label-upload-form.tsx:34 depends on exactly that. The read policy below is
+-- therefore written `to public` to match what the bucket flag already does,
+-- rather than an owner-scoped policy that would falsely imply label artwork is
+-- private. Restricting reads means flipping the bucket, not editing this policy.
+-- Tracked as security card SEC-labels-bucket. Do not treat this as accepted.
 -- -----------------------------------------------------------------------------
 create policy labels_insert_own on storage.objects
   for insert to authenticated
@@ -257,12 +272,11 @@ create policy labels_insert_own on storage.objects
     and (storage.foldername(name))[1] = auth.uid()::text
   );
 
-create policy labels_select_own on storage.objects
-  for select to authenticated
-  using (
-    bucket_id = 'labels'
-    and ((storage.foldername(name))[1] = auth.uid()::text or public.is_admin())
-  );
+-- Matches the public bucket flag. See the note above: this policy is not the
+-- control, the bucket's `public = true` is.
+create policy labels_read_all on storage.objects
+  for select to public
+  using (bucket_id = 'labels');
 
 -- upsert: true is passed at label-uploader.tsx:38 and label-upload-form.tsx:32,
 -- which needs UPDATE as well as INSERT when the object already exists.

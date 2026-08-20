@@ -1,9 +1,12 @@
 # LABLLD — Schema Reconstruction Notes
 
 **Reconstructed:** 2026-08-20
+**Amended:** 2026-08-20, applying owner rulings on C11, C15, D1, D2 and D3
 **Repo:** `adammeguellati/lablld_1`, branch `feat/schema-reconstruction`, cut from `main` @ `4c2deae`
 **Artifacts:** `supabase/migrations/0001_initial_schema.sql`, `supabase/migrations/0002_rls_policies.sql`, `supabase/seed.sql`
 **Prior work:** `docs/audit/CODE-AUDIT-2026-08.md` (on branch `docs/code-audit`, not yet merged)
+
+> **Rulings applied.** `merchant_labels.merchant_id` cascades on merchant delete (C15). The `labels` storage bucket is public, for parity with production only — the exposure is tracked, not accepted (C11, security card **SEC-labels-bucket**). The legacy Stripe columns stay until the webhook route is retired (D2, D3). `order_items.merchant_product_id` is nullable and the TypeScript correction is tracked separately (D1). Each is written up in place below; nothing was deleted from the record.
 
 ---
 
@@ -185,21 +188,26 @@ Created in `0002` purely to make the RLS policies expressible. The app identifie
 
 ### Foreign key delete behaviour
 
-All FKs between application tables were authored `ON DELETE RESTRICT`, because **the application hand-rolls its own cascades**, which it would not need to do if the database cascaded for it:
+FKs between application tables were authored `ON DELETE RESTRICT` by default, because **the application hand-rolls its own cascades**, which it would not need to do if the database cascaded for it:
 
 - `app/api/admin/products/[id]/route.ts:148-157` deletes `order_items` → `shipping_rates` → `merchant_products` → `products`, in that order.
 - `app/api/admin/merchants/[id]/route.ts:52-61` deletes `order_items` → `orders` → `shopify_stores` → `merchant_products` → `merchants`.
 
-`merchants.id → auth.users` and `products.created_by → auth.users` are the exceptions (`CASCADE` and `SET NULL`), since those parents are managed by GoTrue rather than by application code.
+Three exceptions:
+
+- **`merchant_labels.merchant_id` is `ON DELETE CASCADE`** per the 2026-08-20 ruling, because the second chain above never names `merchant_labels` and would otherwise be blocked by it. See C15.
+- `merchants.id → auth.users` is `CASCADE` and `products.created_by → auth.users` is `SET NULL`, since those parents are managed by GoTrue rather than by application code.
 
 ### Storage buckets
 
-| Bucket | Path convention | Written by | Client |
-| --- | --- | --- | --- |
-| `labels` | `{merchantId}/{productId}/{ts}.{ext}` (`label-uploader.tsx:35`), `{merchantId}/brand/{ts}.{ext}` (`label-upload-form.tsx:30`) | merchants | **browser**, publishable key |
-| `product-images` | `{ts}-{rand}.{ext}` (`product-image-uploader.tsx:30`, `theme-labels-editor.tsx:36`, `app/admin/settings/page.tsx:30`) | admins | **browser**, publishable key |
+| Bucket | Path convention | Written by | Client | Public |
+| --- | --- | --- | --- | --- |
+| `labels` | `{merchantId}/{productId}/{ts}.{ext}` (`label-uploader.tsx:35`), `{merchantId}/brand/{ts}.{ext}` (`label-upload-form.tsx:30`) | merchants | **browser**, publishable key | yes (C11) |
+| `product-images` | `{ts}-{rand}.{ext}` (`product-image-uploader.tsx:30`, `theme-labels-editor.tsx:36`, `app/admin/settings/page.tsx:30`) | admins | **browser**, publishable key | yes |
 
-Both upload paths run in the browser under the user's own session, so **storage RLS is genuinely enforced today** — unlike table access, which the service-role client bypasses. Every `labels` path is prefixed with the owning merchant's uuid, which is what makes `(storage.foldername(name))[1] = auth.uid()::text` a correct and sufficient ownership check.
+Both upload paths run in the browser under the user's own session, so **storage RLS is genuinely enforced on writes** — unlike table access, which the service-role client bypasses. Every `labels` path is prefixed with the owning merchant's uuid, which is what makes `(storage.foldername(name))[1] = auth.uid()::text` a correct and sufficient ownership check for insert, update and delete.
+
+**Reads are a different story.** Both buckets are public, so objects are served over the CDN path without any policy evaluation. The `select` policies in `0002` are written `to public` to match that rather than imply a restriction the bucket flag overrides. Read access is governed by the bucket flag alone — see C11.
 
 ---
 
@@ -252,11 +260,15 @@ Not one index can be proven from application code; every index in `0001` was der
 
 The app's admin check is an env-var email allowlist read at module scope (`lib/utils.ts:37-40`). Postgres cannot read the app's environment, so RLS could not mirror it without relocating the list. `admin_emails` is my invention. **It creates a second copy of the admin list that nothing keeps in sync with `ADMIN_EMAILS`.** Change one without the other and you get a user who is an admin to the app but not the database, or the reverse. If the real project used a JWT custom claim or a `role` column instead, this table should be replaced by that.
 
-### C11 — `labels` bucket authored PRIVATE, which does not match production
+### C11 — `labels` bucket privacy — **RESOLVED 2026-08-20: PUBLIC, for parity. Not accepted as a security position.**
 
-Instructed, and correct on the merits: `CODE-AUDIT-2026-08.md` §5 records that `CLAUDE.md` declares both buckets public with hand-made policies that exist in no repository, and a public `labels` bucket means any merchant's proprietary label artwork is readable by anyone with or guessing the URL.
+**Ruling:** author the bucket `public = true` so this reconstruction can be diffed against the live project without a storage difference masking real schema drift. Flipping it to private, plus the signed-URL migration that requires, is tracked as security card **SEC-labels-bucket**.
 
-**But it is a breaking change and I did not fix the callers.** `components/merchant/label-uploader.tsx:42` and `label-upload-form.tsx:34` both call `getPublicUrl()`, which returns a working URL only for a public bucket. Against a private bucket they will return URLs that 400. Making this real requires migrating both call sites to `createSignedUrl()`, plus every surface that renders a stored `label_url` — including the admin label queue. That is application work, out of scope here. Flip `public` to `true` in `0001` if you need to match production exactly today.
+Applied in `0001`: `storage.buckets` now inserts `('labels','labels',true)`. The storage policies in `0002` were made consistent — the owner-scoped `labels_select_own` was replaced by `labels_read_all` (`for select to public`), because a public bucket is served over the CDN path without RLS evaluation at all, and an owner-scoped read policy would have falsely implied label artwork was private. Write policies (`insert` / `update` / `delete`) remain owner-scoped: those *are* still enforced, since uploads run in the browser under the user's own session.
+
+**The exposure is unchanged and still real.** Every merchant's label artwork is readable by anyone holding or guessing the URL. `CODE-AUDIT-2026-08.md` §5 records the same. Parity is a diffing convenience, not a judgement that this is fine.
+
+**What SEC-labels-bucket has to carry**, because it is more than a one-line flag flip: `components/merchant/label-uploader.tsx:42` and `label-upload-form.tsx:34` both call `getPublicUrl()`, which returns a working URL only for a public bucket. Both must move to `createSignedUrl()`, along with every surface that renders a stored `label_url`, including the admin label queue. Flip the bucket without that work and label display breaks everywhere.
 
 ### C12 — Columns that exist but nothing uses
 
@@ -274,9 +286,17 @@ The last two are residue from the dead `lib/envia.ts` shipping integration (risk
 
 Rewritten by delete-all-then-reinsert, so nothing forces `(product_id, country_code)` to be unique and the application would tolerate duplicates. A real schema might well have that constraint. Not authored, because inventing it could block a restore.
 
-### C15 — Enabling RLS changes the merchant-deletion path
+### C15 — Merchant deletion vs `merchant_labels` — **RESOLVED 2026-08-20: FK is `ON DELETE CASCADE`.**
 
-`app/api/admin/merchants/[id]/route.ts:52-61` deletes `order_items`, `orders`, `shopify_stores` and `merchant_products` before deleting the merchant — **but not `merchant_labels`**. With the `ON DELETE RESTRICT` FK authored in `0001`, deleting a merchant who has ever saved a label will now **fail** where it previously succeeded (leaving orphans, or cascading, depending on what the real FK does). This is a genuine behaviour change introduced by this reconstruction. Either add `merchant_labels` to that delete chain, or change that one FK to `ON DELETE CASCADE`. **This needs a decision before applying anywhere.**
+**Ruling:** a label is worthless without its merchant, so `merchant_labels.merchant_id` cascades. Fixing the application's delete chain to name `merchant_labels` explicitly is tracked separately as a code-first card.
+
+The problem: `app/api/admin/merchants/[id]/route.ts:52-61` deletes `order_items`, `orders`, `shopify_stores` and `merchant_products` before deleting the merchant, **but never `merchant_labels`**. Under the `ON DELETE RESTRICT` convention every other FK in `0001` uses, deleting a merchant who had ever saved a label would have failed outright.
+
+Applied in `0001`: that one FK is now `on delete cascade`, carrying the comment `-- CASCADE per ruling 2026-08-20: label is worthless without merchant; code delete-chain fix tracked separately`. Every other FK between application tables stays `RESTRICT`.
+
+Verified against the container: seeded a merchant with two labels, ran the app's exact delete chain (which does not touch `merchant_labels`), and the merchant delete succeeded with zero orphan label rows left behind. The deletion path works today without any code change; the tracked card is about making the intent explicit in the application rather than implicit in the FK.
+
+**Consequence worth naming:** cascade means label rows now disappear silently on merchant deletion, with no audit trail. The stored objects in the `labels` bucket are *not* removed by this — nothing in the codebase deletes storage objects on merchant deletion, so the artwork outlives the rows that pointed at it. That orphaned-object cleanup is unowned by either card.
 
 ### C16 — What this method cannot see at all
 
@@ -294,19 +314,25 @@ Each of these is a live contradiction in the repository, not a reconstruction ar
 - `app/(merchant)/orders/new/actions.ts:92` inserts the literal `null` for every sample order.
 - `app/admin/orders/new/actions.ts:47` inserts `mpRes.data?.id ?? null` whenever the merchant has no matching `merchant_product`.
 
-Two writers beat one type declaration. The column is authored **nullable**, and the FK is `ON DELETE RESTRICT`. **`types/index.ts:216` should be corrected to `string | null`** — any code doing `item.merchant_product_id.slice(...)` or similar is a latent null-dereference today. Verified against the live container: the null insert succeeds.
+Two writers beat one type declaration. The column is authored **nullable**, and the FK is `ON DELETE RESTRICT`. Verified against the container: the null insert succeeds.
 
-### D2 — `merchants` Stripe columns: three sources, three answers
+**RESOLVED 2026-08-20.** Nullable is the authored answer and stands. The matching TypeScript correction — `types/index.ts:216` to `string | null` — is **tracked separately as a code fix**, not made here; this branch touches SQL and docs only. Until that lands, the type still lies about production data: any code doing `item.merchant_product_id.slice(...)` or passing it somewhere non-null is a latent null-dereference on sample and admin-created orders. The schema is not the bug; the type is.
+
+### D2 — `merchants` Stripe columns — **RESOLVED 2026-08-20: keep `stripe_subscription_id`. Removal tracked as a code-first card.**
 
 - `CLAUDE.md:350-351` lists `stripe_customer_id`, `stripe_payment_method_id`, `stripe_subscription_id`.
 - `types/index.ts:23-39` declares **none** of them.
 - `app/api/webhooks/stripe/route.ts` filters on `stripe_subscription_id` at lines 58, 79, 88 and 105, and writes it at 115. It never touches the other two.
 
-I authored `stripe_subscription_id` only. **This cannot be resolved from the repo** — it is the same open question the audit raised as risk R2. Either the column survives as a legacy artifact and that webhook still silently mutates merchant plans, or it was dropped and the webhook has been failing with `42703` ever since. Both are bad; they need different fixes. The webhook is dead code either way (payments moved to Wompi), so the correct end state is to delete the route and the column together.
+**Ruling:** keep the column. Removal is code-first — delete `app/api/webhooks/stripe/route.ts` and `lib/stripe.ts`, drop the `@stripe/*` dependencies, remove the webhook endpoint from the Stripe account, and only then drop the column in a follow-up migration. Dropping the column while that route is still deployed converts a silent legacy path into a hard `42703` on every inbound Stripe event.
 
-### D3 — `orders.stripe_payment_intent_id`: same shape
+`stripe_customer_id` and `stripe_payment_method_id` remain **not authored**: no code path anywhere reads or writes either, so there is nothing to keep them alive for. Only `stripe_subscription_id` survives, and only because a live route still queries it.
 
-`CLAUDE.md:375` lists it. `types/index.ts:174-200` omits it. `app/api/webhooks/stripe/route.ts:30` writes it. Authored, flagged legacy, same disposition as D2.
+Note what the ruling does *not* settle: whether the column exists in the real database. It cannot be settled from the repo — that is audit risk R2, and it decides whether the Stripe webhook has been quietly mutating merchant plans or failing outright since the Wompi migration. The reconstruction is correct either way; the live system's behaviour is not known.
+
+### D3 — `orders.stripe_payment_intent_id` — **RESOLVED 2026-08-20: same ruling as D2.**
+
+`CLAUDE.md:375` lists it. `types/index.ts:174-200` omits it. `app/api/webhooks/stripe/route.ts:30` writes it. Kept, flagged legacy, drops together with D2 in the same code-first card.
 
 ### D4 — Order status vocabulary: 7 vs 9
 
@@ -357,6 +383,11 @@ Performed against a throwaway `postgres:16-alpine` Docker container on localhost
 | `UNIQUE(products.slug)` allows multiple NULLs | yes |
 | `order_status` enum rejects an unlisted value | yes |
 | `updated_at` trigger fires across transactions | yes |
+| **C15** — `merchant_labels.merchant_id` FK is `CASCADE` | confirmed (`confdeltype = 'c'`) |
+| **C15** — app's delete chain removes a merchant holding 2 labels | succeeds, 0 orphan rows |
+| **C11** — `labels` bucket `public` | `true` |
+| **C11** — `labels` read policy is `for select to public` | yes (`labels_read_all`) |
+| **C11** — `labels` write policies stay owner-scoped | yes (insert/update/delete, `{authenticated}`) |
 | Billing-sweep query (`cron/billing/route.ts:19`) | executes |
 | Shopify ingest join (`_process-order.ts:33`) | executes |
 | PDP product + nested `shipping_rates` (`catalog/[slug]/page.tsx:38`) | executes |
@@ -364,14 +395,27 @@ Performed against a throwaway `postgres:16-alpine` Docker container on localhost
 | `shopify_stores` upsert on `shop_domain` | executes |
 | Pending-payment count (`layout.tsx:19`) | executes |
 
-**What this validation does and does not prove.** It proves the SQL is syntactically valid, internally consistent, and structurally capable of serving the queries the application makes. It proves nothing about whether it matches the real LABLLD database, which was never contacted. The RLS policies in particular were never exercised under a real JWT — the stubbed `auth.uid()` returns `NULL` — so they are syntax-checked, not behaviour-checked.
+**Structural counts are unchanged by the 2026-08-20 amendment.** Re-run from an empty database after applying the rulings: 10 tables, 24 `public` policies, 8 `storage.objects` policies, 35 indexes, 6 enums, RLS on 10/10 — identical to the pre-ruling run. The only differences are the three intended ones, each verified above: the `merchant_labels` FK delete action, the `labels` bucket flag, and the rename of `labels_select_own` to `labels_read_all` with a widened role. No policy was added or dropped.
+
+**What this validation does and does not prove.** It proves the SQL is syntactically valid, internally consistent, and structurally capable of serving the queries the application makes. It proves nothing about whether it matches the real LABLLD database, which was never contacted. The RLS policies in particular were never exercised under a real JWT — the stubbed `auth.uid()` returns `NULL` — so they are syntax-checked, not behaviour-checked. The one exception is the C15 cascade, which was exercised with real rows and real deletes.
 
 ---
 
 ## Before applying this anywhere
 
-1. Resolve **C15** (merchant deletion vs `merchant_labels`) — it will fail at runtime otherwise.
-2. Decide **D2/D3** — keep the Stripe columns or delete them with the webhook.
-3. Decide **C11** — private `labels` bucket plus signed-URL migration, or public to match today.
-4. Fix **D1** in `types/index.ts` regardless of whether this schema is ever applied. That one is a real latent bug in shipped code.
+**Resolved by owner ruling on 2026-08-20** — no longer blocking:
+
+- **C15** — `merchant_labels.merchant_id` is `ON DELETE CASCADE`. The app's existing delete chain works unmodified; making it explicit is a tracked code-first card.
+- **C11** — `labels` bucket is **public**, matching production so this schema can be diffed against the live project. The exposure is real and unaccepted; tracked as security card **SEC-labels-bucket**, which must carry the `getPublicUrl()` → `createSignedUrl()` migration alongside the flag flip.
+- **D2 / D3** — Stripe columns stay. Removal is code-first: retire the webhook route, then drop the columns.
+- **D1** — `order_items.merchant_product_id` is authored nullable. The `types/index.ts:216` correction is a tracked code fix.
+
+**Still open:**
+
+1. **C3** — `merchant_products UNIQUE(merchant_id, product_id)` is inferred. If the live table holds duplicate pairs, a restore will refuse to create it.
+2. **C5** — money columns follow Zod's inconsistent `.int()` usage; they may all be `integer` in reality.
+3. **C10** — `admin_emails` duplicates the `ADMIN_EMAILS` env var with nothing keeping the two in sync.
+4. **C16** — everything this method structurally cannot see: unread columns, triggers, functions, views, existing policies, bucket size and MIME limits, auth config.
 5. If any LABLLD Supabase project is ever recovered, **diff it against this before trusting either.**
+
+**Unowned by any card:** orphaned storage objects. Nothing in the codebase deletes files from the `labels` bucket when a merchant, a `merchant_label` row, or a `merchant_product` is deleted, so artwork accumulates indefinitely and now outlives the cascaded rows that pointed at it (see C15).
