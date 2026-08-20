@@ -31,6 +31,22 @@ export function verifyWebhookHmac(rawBody: string, hmacHeader: string): boolean 
   try { return crypto.timingSafeEqual(Buffer.from(hash), Buffer.from(hmacHeader)) } catch { return false }
 }
 
+// Fulfillment-order traffic arrives two ways and the two are signed with
+// different secrets: the topic webhook registered in the OAuth callback is
+// signed with SHOPIFY_API_SECRET, a Dev Dashboard registration with its own
+// SHOPIFY_WEBHOOK_SECRET. Both are accepted, so neither registration path is
+// silently rejected.
+export function verifyFulfillmentHmac(rawBody: string, hmacHeader: string): boolean {
+  const trySecret = (secret: string) => {
+    try {
+      const hash = crypto.createHmac('sha256', secret).update(rawBody, 'utf8').digest('base64')
+      if (hash.length !== hmacHeader.length) return false
+      return crypto.timingSafeEqual(Buffer.from(hash), Buffer.from(hmacHeader))
+    } catch { return false }
+  }
+  return trySecret(SHOPIFY_API_SECRET) || trySecret(process.env.SHOPIFY_WEBHOOK_SECRET!)
+}
+
 export function verifyComplianceWebhookHmac(rawBody: string, hmacHeader: string): boolean {
   const hash = crypto.createHmac('sha256', SHOPIFY_API_SECRET).update(rawBody, 'utf8').digest('base64')
   try { return crypto.timingSafeEqual(Buffer.from(hash), Buffer.from(hmacHeader)) } catch { return false }
