@@ -1,6 +1,20 @@
 import { Resend } from 'resend'
 
-const client = new Resend(process.env.RESEND_API_KEY)
+// Lazy singleton, mirroring getStripe() in lib/stripe.ts. The Resend
+// constructor throws on a missing key, so building it at module scope took the
+// admin order page down at import time: its only importer is
+// app/admin/orders/[id]/actions.ts, and the guard below never got to run.
+let _resend: Resend | null = null
+
+function getResend(): Resend {
+  if (!_resend) {
+    const key = process.env.RESEND_API_KEY
+    if (!key) throw new Error('RESEND_API_KEY is not set')
+    _resend = new Resend(key)
+  }
+  return _resend
+}
+
 const FROM = process.env.RESEND_FROM_EMAIL ?? 'LABLLD <noreply@lablld.com>'
 
 function fmt(n: number) {
@@ -21,7 +35,7 @@ export async function sendQuoteEmail(opts: {
 }): Promise<void> {
   if (!process.env.RESEND_API_KEY) return
   const { to, firstName, orderRef, items, carrier, estimatedDelivery, productCostCop, shippingCostCop, totalCop, paymentUrl } = opts
-  await client.emails.send({
+  await getResend().emails.send({
     from: FROM,
     to,
     subject: `Tu cotización está lista — Orden ${orderRef}`,
