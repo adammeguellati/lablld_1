@@ -34,8 +34,15 @@ export function isProductNew(createdAt: string): boolean {
   return days < 30
 }
 
-const ADMIN_EMAIL_LIST = (process.env.ADMIN_EMAILS ?? '').split(',').map((e) => e.trim().toLowerCase())
+// filter(Boolean) is load-bearing, not tidying. Without it an unset
+// ADMIN_EMAILS yields [''], and a user whose email is null or undefined
+// matches it, so the allowlist grants admin instead of denying it.
+const ADMIN_EMAIL_LIST = (process.env.ADMIN_EMAILS ?? '')
+  .split(',')
+  .map((e) => e.trim().toLowerCase())
+  .filter(Boolean)
 
 export function isAdmin(email: string | null | undefined): boolean {
-  return ADMIN_EMAIL_LIST.includes((email ?? '').toLowerCase())
+  const normalised = (email ?? '').trim().toLowerCase()
+  return normalised !== '' && ADMIN_EMAIL_LIST.includes(normalised)
 }
