@@ -213,7 +213,11 @@ export interface ShippingAddress {
 export interface OrderItem {
   id: string
   order_id: string
-  merchant_product_id: string
+  // Nullable in the schema and written null by two insert sites: sample orders
+  // always, and admin orders whenever the merchant has no matching
+  // merchant_product. Declaring it a bare string made every dereference a
+  // latent crash the compiler could not see.
+  merchant_product_id: string | null
   product_name: string
   quantity: number
   unit_price: number
