@@ -56,24 +56,32 @@
   ],
   "launch_gate": {
     "denominator": 8,
-    "readiness_passed": 0,
+    "readiness_passed": 2,
     "source_note": "The eight launch conditions for handing LABLLD to Adam, set by Ivan on 2026-08-20 and quoted verbatim below. Titles are never edited to record progress; doneness lives in state, evidence and notes. Fail-closed: a condition is fail until its evidence exists.",
     "conditions": [
       {
         "id": "G1",
         "title": "parity: Adam's account registered, seeded, admin + merchant click-through clean on Adam's stack",
-        "state": "fail",
+        "state": "pass",
         "blocked_on": null,
-        "evidence": null,
-        "notes": "Nothing has been run on Adam's stack yet. Closing this needs a setup guide that does not exist (CHORE-write-readme), the schema applied (G2), and real env values (G3). 'Clean' means both roles clicked end to end with no error screen and no console exception."
+        "evidence": {
+          "kind": "journal",
+          "ref": "Ivan click-through 2026-08-20: admin products/orders/orders-new + merchant catalog/detail/settings, both provisioned accounts, zero errors. Register intentionally invite-gated per Adam, parity via provisioned credentials matches production onboarding.",
+          "at": "2026-08-20"
+        },
+        "notes": "Nothing has been run on Adam's stack yet. Closing this needs a setup guide that does not exist (CHORE-write-readme), the schema applied (G2), and real env values (G3). 'Clean' means both roles clicked end to end with no error screen and no console exception. PASSED 2026-08-20 on Ivan's deployed-instance click-through, both roles, no crashes. Admin (adam@lablld.com): /admin/products shows the 3 seeded products, /admin/orders renders its empty list, /admin/orders/new renders with Merchant Test in the merchant dropdown. Merchant (merchant-test@lablld.com): /catalog shows 3 products with category filters, /catalog/[id] renders, /settings renders all 4 tabs. Note on scope: 'registered' was met by provisioned credentials, not by self-service signup, because registration is invite-gated by Adam's design in Supabase Auth. That is the production onboarding path, so parity holds."
       },
       {
         "id": "G2",
         "title": "schema: reconstruction applied, seed applied, no runtime schema errors across the parity test",
-        "state": "fail",
+        "state": "pass",
         "blocked_on": null,
-        "evidence": null,
-        "notes": "supabase/migrations/0001_initial_schema.sql, 0002_rls_policies.sql and supabase/seed.sql are authored and merged to main as of 2026-08-20, but have never been applied to any project. They are a reconstruction FROM CODE EVIDENCE, not a dump - INFRA-supabase-schema-dump is the only thing that would upgrade that. Applying them is the test."
+        "evidence": {
+          "kind": "journal",
+          "ref": "Schema reconstruction 0001+0002 applied 2026-08-20, seed applied (1 admin_emails row, 3 products, 1 test merchant), zero runtime schema errors across full parity click-through. One reconstruction correction during parity: merchants uses full_name, not first_name/last_name.",
+          "at": "2026-08-20"
+        },
+        "notes": "supabase/migrations/0001_initial_schema.sql, 0002_rls_policies.sql and supabase/seed.sql are authored and merged to main as of 2026-08-20, but have never been applied to any project. They are a reconstruction FROM CODE EVIDENCE, not a dump - INFRA-supabase-schema-dump is the only thing that would upgrade that. Applying them is the test. PASSED 2026-08-20: 0001 and 0002 applied by Ivan, seed applied, zero runtime schema errors across the G1 click-through. ONE CLAUSE OF THE EVIDENCE CHECKED AGAINST THE REPO AND RECORDED AS ALREADY-TRUE: the reference to a full_name correction does not imply a repo change. supabase/migrations/0001_initial_schema.sql already declares merchants.full_name text not null, and no first_name/last_name column exists on merchants anywhere in the reconstruction. The only first_name/last_name in the tree are on the SHOPIFY CUSTOMER payload (types/index.ts:229-230, read at app/api/webhooks/shopify/_process-order.ts:65), which is an external API shape, not a table. Also worth recording for anyone reading the seed: supabase/seed.sql inserts admin_emails and 3 products only. The test merchant is provisioned through auth, not seeded, which matches the G1 note above."
       },
       {
         "id": "G3",
@@ -167,14 +175,14 @@
       "title": "Add HMAC verification to /api/shopify/fulfillment_order_notification; it is an unauthenticated, unsigned service-role write path while its five sibling webhooks all verify",
       "lane": "in_flight",
       "home_lane": "in_flight",
-      "status": "todo",
+      "status": "in_flight",
       "priority": "high",
-      "owner_terminal": "unassigned",
+      "owner_terminal": "pink",
       "gate": "ivan_merge",
       "blocked_on": null,
       "last_checkpoint": "2026-08-20",
       "evidence": null,
-      "notes": "P0 · Source: docs/audit/CODE-AUDIT-2026-08.md R3. Launch gate G5 does not pass until this is closed."
+      "notes": "P0 · Source: docs/audit/CODE-AUDIT-2026-08.md R3. Launch gate G5 does not pass until this is closed. WORKED 2026-08-20 by PINK, PR #2, awaiting Ivan's merge (ivan_merge gate), so it is in_flight and not shipped: it flips to shipped with a pr evidence ref on merge. RE-DERIVED FROM CODE, AND THE CARD'S FRAMING IS INCOMPLETE. This is not one unsigned endpoint among five signed siblings. TWO routes handle this event, both registered on every OAuth connect, both performing the identical service-role write on orders: /api/shopify/fulfillment_order_notification, reached because registerFulfillmentService sets callback_url to {WEBHOOK_URL}/api/shopify (lib/shopify.ts:101) and Shopify appends the notification path; and /api/webhooks/shopify/fulfillment-order, registered for topic fulfillment_orders/fulfillment_request_submitted (app/api/shopify/callback/route.ts:55-59). Only the second verified. The second also carried its own INLINE dual-secret verifier, because the two registration paths are signed with different secrets: a programmatic topic webhook with SHOPIFY_API_SECRET, a Dev Dashboard registration with its own SHOPIFY_WEBHOOK_SECRET. FIX: that verifier is exported from lib/shopify.ts as verifyFulfillmentHmac and both routes now use it, so the boundary has one implementation instead of one implementation and one hole. NEITHER ROUTE DELETED: which of the two Shopify actually delivers to is a live-system fact and no LABLLD terminal has production access. Verifying both breaks nothing; deleting the wrong one silently breaks fulfillment tracking. PROVEN at authoring time against the real exported function, 6 cases green (valid under either secret accepts; attacker secret, absent header, short header, and a valid signature for a different body all reject) plus a NEGATIVE ARM: with the guard removed the forged request is accepted, which is what makes those assertions load-bearing. The probe becomes a committed test in INFRA-ci-and-tests, card 4 of this wave. OPEN RISK FOR IVAN: if Shopify's fulfillment-service callback carries no X-Shopify-Hmac-Sha256 header, this endpoint now 401s where it used to accept. Unverifiable from code. Mitigating fact: the signed sibling receives the same event and does the same write, so the column still gets populated; the failure mode is a redundant path going quiet, not lost data. Confirm after merge by connecting a store, placing a test order, and checking orders.shopify_fulfillment_order_id."
     },
     {
       "id": "SEC-admin-layout-gate",
