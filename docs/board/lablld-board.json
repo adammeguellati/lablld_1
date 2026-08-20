@@ -127,6 +127,42 @@
   },
   "cards": [
     {
+      "id": "INC-01",
+      "title": "/login submit returned the raw Supabase gateway error \"Invalid path specified in request URL\"; root cause was a malformed NEXT_PUBLIC_SUPABASE_URL, corrected by Ivan",
+      "lane": "shipped",
+      "home_lane": "incidents",
+      "priority": "high",
+      "status": "shipped",
+      "owner_terminal": "ivan",
+      "gate": "ivan_merge",
+      "evidence": {
+        "kind": "journal",
+        "ref": "Ivan confirmed on deployed instance 2026-08-20, both logins green after env correction",
+        "at": "2026-08-20"
+      },
+      "blocked_on": null,
+      "last_checkpoint": "2026-08-20",
+      "notes": "Reported by Ivan 2026-08-20 against https://lablld-1.vercel.app: submitting /login showed \"Invalid path specified in request URL\". RESOLVED by an env correction on Ivan's side; he confirmed on the deployed instance that both an admin and a merchant account now log in cleanly. MECHANISM, re-derived from the installed code rather than transcribed: supabase-js 2.99.1 builds every sub-API URL by RELATIVE resolution against the env value (dist/index.mjs:367-398, new URL('auth/v1', ensureTrailingSlash(NEXT_PUBLIC_SUPABASE_URL))). Any path segment left in that variable is therefore preserved, the auth request lands on a route the Supabase gateway does not serve, and the gateway answers with exactly that string. The message reached the user's screen in English because translateAuthError (app/(auth)/actions.ts) had no branch for it and returned the upstream text unchanged. That display defect is fixed in the same PR that carries this card. REQUIRED SHAPE, variable name only: NEXT_PUBLIC_SUPABASE_URL must be scheme plus host and nothing else - no path, no /rest/v1 or /auth/v1 suffix, no dashboard URL. No secret value was read, requested, printed or logged at any point in this incident."
+    },
+    {
+      "id": "INC-02",
+      "title": "/register crashed with \"Application error: a client-side exception has occurred\"; cleared by the same NEXT_PUBLIC_SUPABASE_URL correction, throw site never captured",
+      "lane": "shipped",
+      "home_lane": "incidents",
+      "priority": "high",
+      "status": "shipped",
+      "owner_terminal": "ivan",
+      "gate": "ivan_merge",
+      "evidence": {
+        "kind": "journal",
+        "ref": "Ivan confirmed on deployed instance 2026-08-20, both logins green after env correction",
+        "at": "2026-08-20"
+      },
+      "blocked_on": null,
+      "last_checkpoint": "2026-08-20",
+      "notes": "Reported by Ivan 2026-08-20: /register threw \"Application error: a client-side exception has occurred\", a full crash rather than the intentional signup gating Adam described. The gating itself is configured in Supabase Auth and is NOT a defect; the crash was. RESOLVED: Ivan confirmed on the deployed instance that /register no longer crashes after the same NEXT_PUBLIC_SUPABASE_URL correction that cleared INC-01. The card closes on that confirmation. THE THROW SITE WAS NEVER CAPTURED AND IS RECORDED HERE AS UNPROVEN. The reported mechanism - the malformed URL throwing at the client factory's URL scheme check before network I/O - was tested locally against the installed @supabase/supabase-js 2.99.1 and @supabase/ssr 0.9.0 and is FALSIFIED, two independent ways. (1) @supabase/ssr delegates to the same supabase-js createClient (ssr/dist/main/createServerClient.js:16), so the URL shapes that DO throw at the scheme check - no scheme, empty, undefined - throw identically in all three factories. proxy.ts:8 constructs a client from that same variable on every matched request, and the matcher covers both /login and /register, so such a value would have failed at the edge and neither page would have rendered at all. (2) The only URL shape that produces INC-01's gateway response is a path-suffixed URL, and that shape was probed and constructs CLEANLY in all three factories; it never throws. One env value cannot both throw at the factory and reach the gateway. Since /login rendered and displayed a gateway message, the URL parsed. WHAT IS CERTAIN: the env correction cleared it, and this app has no error.tsx and no global-error.tsx anywhere in app/, so ANY uncaught throw renders that exact default message and names no location. WHAT IS NOT KNOWN: which statement threw. No server stack trace was taken, Vercel runtime log access is permanently off limits by Ivan's ruling of 2026-08-20, and the defect no longer reproduces. Do not build on the reported mechanism. MITIGATION SHIPPED WITH THIS CARD: the three auth entry points now reach the Supabase factories through lib/supabase/safe.ts and fail CLOSED with a Spanish message instead of throwing, and registerAction no longer discards the error from its merchants pre-check - a discarded error there read as \"this email is free\" and let registration proceed on an unknown answer. ACCEPTED TRADEOFF, stated rather than buried: the fix adds NO logging, because CLAUDE.md forbids console output and the repo holds that rule perfectly (zero console.* calls in app/, lib/, components/ and proxy.ts). A configuration failure is therefore now silent to the operator: the user sees a readable message and the app stays up, but nothing records why. Introducing a logging convention inside an incident hotfix was the wrong place to decide it. That gap belongs to INFRA-billing-alerting, which already owns \"no error reporting anywhere in the codebase\", and is noted on it. See also CODE-error-boundaries, the card that would have made this incident legible instead of anonymous."
+    },
+    {
       "id": "SEC-shopify-fulfillment-endpoint",
       "title": "Add HMAC verification to /api/shopify/fulfillment_order_notification; it is an unauthenticated, unsigned service-role write path while its five sibling webhooks all verify",
       "lane": "in_flight",
@@ -379,6 +415,20 @@
       "notes": "P3 · Source: audit §8.5(c). ADDED-BY-SWEEP."
     },
     {
+      "id": "CODE-error-boundaries",
+      "title": "No error.tsx and no global-error.tsx anywhere in app/, so every uncaught throw renders Next's default white page naming neither cause nor location; INC-02 was undiagnosable for this reason",
+      "lane": "loose_ends",
+      "home_lane": "loose_ends",
+      "priority": "medium",
+      "status": "todo",
+      "owner_terminal": "unassigned",
+      "gate": "ivan_merge",
+      "evidence": null,
+      "blocked_on": null,
+      "last_checkpoint": "2026-08-20",
+      "notes": "Discovered while diagnosing INC-02 and recorded rather than fixed, because it is user-visible surface and belongs to Ivan's deployed-screen review, not to an incident hotfix. find app -name error.tsx -o -name global-error.tsx returns nothing. Consequence: any throw in a Server Component, a route handler or a Server Action reaches the browser as \"Application error: a client-side exception has occurred\" with no digest surfaced to the operator and no recovery affordance for the user. Scope when built: a root app/error.tsx and app/global-error.tsx in the LABLLD visual system, both surfacing the Next error digest so a production failure can be correlated without log access, plus a decision on whether the merchant and admin segments want their own boundaries. Depends on the visual system, so sequence it with the UI wave, not before."
+    },
+    {
       "id": "INFRA-vercel-pro",
       "title": "app/api/cron/billing/route.ts:7 sets maxDuration = 300, which exceeds the Hobby cap; on the wrong plan the billing loop truncates mid-merchant and it is not idempotent-safe to re-run",
       "lane": "in_flight",
@@ -418,7 +468,7 @@
       "blocked_on": null,
       "last_checkpoint": "2026-08-20",
       "evidence": null,
-      "notes": "P0 · Source: audit R8. ADDED-BY-SWEEP. A new third-party vendor (Sentry or equivalent) needs asking first."
+      "notes": "P0 · Source: audit R8. ADDED-BY-SWEEP. A new third-party vendor (Sentry or equivalent) needs asking first. ADDED 2026-08-20 while closing INC-02: the auth entry points now fail closed on an unusable Supabase configuration (lib/supabase/safe.ts) and swallow the cause, because the repo keeps CLAUDE.md's no-console rule with zero exceptions and a hotfix was the wrong place to introduce a logging convention. When this card is built, the reporting seam it introduces must cover those paths: a login or registration that fails on configuration currently leaves no operator-visible trace at all."
     },
     {
       "id": "INFRA-account-transfer",
