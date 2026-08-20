@@ -46,3 +46,6 @@ next-env.d.ts
 # from the committed JSON. BOARD-SPEC.md: the JSON is the source of truth and the
 # render is never hand-edited, so committing it would create a second one.
 docs/board/*.rendered.html
+
+# local design bundle — handoff assets kept on disk only, not part of the app
+design_handoff_lablld_dashboard/
