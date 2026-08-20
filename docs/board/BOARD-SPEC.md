@@ -223,6 +223,45 @@ read literally, so this project states what each one means:
 | `adam_authorizes` | the owner authorises before anything is built or spent: product decisions, paid-tier upgrades, account ownership changes |
 | `stakeholder` | an outside party signs off - Shopify app review, a payment processor, counsel. Reserved; no card carries it yet |
 
+### Merge authority
+
+Granted by Ivan on 2026-08-20, once branch protection went live on `main`.
+Before that date `green_self_merge` named an authority that could not be
+exercised, because there were no required checks to be green.
+
+**What protection enforces on `main`:** pull requests are mandatory, the three
+required checks are `typecheck`, `lint` and `build`, and there is **no bypass**.
+Those three strings are job ids in `.github/workflows/ci.yml`. Renaming a job
+renames its check and GitHub then waits forever on a check nothing reports, so
+the ids are load-bearing configuration, not labels.
+
+**The rule:**
+
+- A card gated `green_self_merge` is merged by the executor terminal itself,
+  once **all** required checks are green. Squash merge, delete the branch after.
+- A card gated `ivan_merge`, `adam_authorizes` or `stakeholder` is never merged
+  by an executor. Unchanged by this grant.
+- **If a card's `gate` field contradicts a verbal grant, the board JSON wins.**
+  Halt on that card and flag it rather than resolving the disagreement in
+  either direction.
+
+**Merging is not shipping.** The two were the same thing for routine work and
+are not the same thing for visual work:
+
+| card kind | ships when |
+|---|---|
+| `SEC`, `CODE`, `INFRA`, `CHORE` and other non-visual work | on merge, with the PR as `evidence` |
+| any UI or visual card | only on **Ivan's deployed-screen confirmation**, no matter who merged it |
+
+The asymmetry is the point. A green check proves the code compiles, lints and
+builds. It cannot prove a screen looks right, so for visual work the merge is a
+step and the confirmation is the evidence.
+
+**Red is never merged.** A check that flakes or goes red is fixed or halted on.
+Disabling a check, relaxing it, or narrowing its scope to obtain green is
+forbidden: it converts a real gate into a decorative one, which is the exact
+anti-pattern the evidence standard at the end of this file exists to prevent.
+
 ## The portal (what the artifact is)
 
 The artifact is a working surface, not a picture of one. It renders from the JSON
