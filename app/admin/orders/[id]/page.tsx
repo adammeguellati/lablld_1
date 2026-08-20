@@ -2,6 +2,7 @@ import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { signLabelUrls } from '@/lib/storage'
 import { Badge } from '@/components/ui/badge'
 import { OrderStatusForm } from '@/components/admin/order-status-form'
 import { formatCOP, formatDate, isAdmin } from '@/lib/utils'
@@ -33,6 +34,8 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
   if (!orderRes.data) notFound()
   const order = orderRes.data as unknown as Order & { merchant: { full_name: string; email: string } | null }
   const items = (itemsRes.data as unknown as ItemRow[]) ?? []
+  const signed = await signLabelUrls(items.map((i) => i.merchant_product?.label_url))
+  const labelViewUrls = new Map(items.map((i, n) => [i.id, signed[n]]))
   const addr = order.shipping_address
 
   return (
@@ -62,17 +65,20 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
       <div className="bg-white rounded-lg border p-4 space-y-3">
         <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Productos · Etiquetas</p>
         <div className="divide-y">
-          {items.filter(item => item.unit_price > 0).map((item) => (
+          {items.filter(item => item.unit_price > 0).map((item) => {
+            const labelUrl = labelViewUrls.get(item.id) ?? item.merchant_product?.label_url
+            return (
             <div key={item.id} className="flex items-center gap-3 py-3">
-              {item.merchant_product?.label_url ? (
-                <a href={item.merchant_product.label_url} target="_blank" rel="noopener noreferrer"
+              {labelUrl ? (
+                <a href={labelUrl} target="_blank" rel="noopener noreferrer"
                   className="flex-shrink-0 w-12 h-12 rounded border border-gray-200 bg-gray-50 overflow-hidden hover:opacity-80 transition-opacity">
-                  {/* User-uploaded storage URL in a fixed-size container. Converting to
-                      next/image is deferred to the UI wave, not skipped: SEC-labels-bucket
-                      moves these to signed URLs, which changes the shape the optimizer's
-                      remotePatterns must match, so converting now would be redone. */}
+                  {/* Stays a plain img, and this is now a decision rather than a
+                      deferral. The src is a SIGNED, expiring URL, so every render
+                      is a fresh URL and therefore a fresh optimizer cache miss and
+                      a fresh billable transformation. next/image is the wrong tool
+                      for a short-lived URL. */}
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={item.merchant_product.label_url} alt="Etiqueta" className="w-full h-full object-contain" />
+                  <img src={labelUrl} alt="Etiqueta" className="w-full h-full object-contain" />
                 </a>
               ) : (
                 <div className="flex-shrink-0 w-12 h-12 rounded border border-dashed border-gray-200 bg-gray-50 flex items-center justify-center">
@@ -84,7 +90,8 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
                 <span className="text-muted-foreground ml-2 shrink-0">{formatCOP(item.unit_price * item.quantity)}</span>
               </div>
             </div>
-          ))}
+            )
+          })}
         </div>
         {order.shipping_cost_cop != null && order.shipping_cost_cop > 0 && (
           <div className="flex justify-between text-sm pt-1 border-t text-muted-foreground">

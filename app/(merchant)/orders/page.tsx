@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { MerchantOrdersTable } from '@/components/merchant/orders-table'
+import { signLabelUrl } from '@/lib/storage'
 import type { Order } from '@/types'
 
 export default async function MerchantOrdersPage() {
@@ -17,6 +18,15 @@ export default async function MerchantOrdersPage() {
     .order('created_at', { ascending: false })
 
   const orders = (data as unknown as Order[]) ?? []
+
+  // Safe to substitute in place here, unlike the label pages: nothing downstream
+  // of MerchantOrdersTable compares label_url, it only renders it.
+  await Promise.all(
+    orders.flatMap((o) => (o.order_items ?? []).map(async (item) => {
+      const mp = item.merchant_product
+      if (mp?.label_url) mp.label_url = (await signLabelUrl(mp.label_url)) ?? mp.label_url
+    })),
+  )
 
   return (
     <div>

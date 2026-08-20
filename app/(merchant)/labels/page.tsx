@@ -2,6 +2,7 @@ import Image from 'next/image'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { signLabelUrls } from '@/lib/storage'
 import { Badge } from '@/components/ui/badge'
 import { LabelUploadForm } from '@/components/merchant/label-upload-form'
 import { formatDate } from '@/lib/utils'
@@ -27,6 +28,9 @@ export default async function LabelsPage() {
     .order('created_at', { ascending: false })
 
   const labels = (data as unknown as MerchantLabel[]) ?? []
+  // Signed for display only. label_url itself is left alone: it is matched on
+  // for equality elsewhere, so it is an identity, not just a locator.
+  const viewUrls = await signLabelUrls(labels.map((l) => l.label_url))
 
   return (
     <div className="max-w-3xl space-y-8">
@@ -46,12 +50,13 @@ export default async function LabelsPage() {
         <div className="space-y-4">
           <h2 className="font-semibold">Tus etiquetas</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {labels.map((label) => (
+            {labels.map((label, i) => (
               <div key={label.id} className="bg-white border rounded-xl p-4 flex gap-4 items-start">
-                <a href={label.label_url} target="_blank" rel="noopener noreferrer" className="shrink-0">
+                <a href={viewUrls[i] ?? label.label_url} target="_blank" rel="noopener noreferrer" className="shrink-0">
                   <Image
-                    src={label.label_url} alt={label.name ?? 'Etiqueta'}
+                    src={viewUrls[i] ?? label.label_url} alt={label.name ?? 'Etiqueta'}
                     width={72} height={72}
+                    unoptimized
                     className="rounded-lg border object-contain bg-gray-50"
                   />
                 </a>
