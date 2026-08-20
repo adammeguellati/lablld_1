@@ -287,14 +287,14 @@
       "title": "lib/email.ts:3 constructs the Resend client at module scope, which throws on a missing key and takes down /admin/orders/[id] at import time; make it a lazy singleton like getStripe(), which exists for exactly this reason",
       "lane": "in_flight",
       "home_lane": "in_flight",
-      "status": "todo",
+      "status": "in_flight",
       "priority": "high",
-      "owner_terminal": "unassigned",
+      "owner_terminal": "pink",
       "gate": "green_self_merge",
       "blocked_on": null,
       "last_checkpoint": "2026-08-20",
       "evidence": null,
-      "notes": "P1 · Source: audit R10, §8.5(a). ADDED-BY-SWEEP."
+      "notes": "P1 · Source: audit R10, §8.5(a). ADDED-BY-SWEEP. WORKED 2026-08-20 by PINK, PR #3. in_flight not shipped: the gate is green_self_merge but this repo has ZERO CI checks configured until INFRA-ci-and-tests lands, so there is no green to merge on and nothing is being self-merged into a vacuum. CARD CONFIRMED EXACTLY, with one detail it does not mention: lib/email.ts already carried the correct guard, `if (!process.env.RESEND_API_KEY) return` at the top of sendQuoteEmail. It was DEAD CODE, because the module threw at import before anything could reach it. The lazy singleton brings that guard back to life. SCOPE CHECKED: there are three `new Resend` sites, not one. app/admin/shopify/actions.ts:34 and app/(merchant)/settings/shopify/actions.ts:44 both construct inside a function AND behind an explicit RESEND_API_KEY guard, so neither can throw; both left untouched. PROVEN with the key absent: importing lib/email.ts no longer throws, sendQuoteEmail returns early, and a NEGATIVE ARM confirms the module-scope construction being removed does still throw, so the fix guards something real."
     },
     {
       "id": "CODE-explicit-merchant-delete-chain",
