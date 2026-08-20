@@ -67,6 +67,11 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
               {item.merchant_product?.label_url ? (
                 <a href={item.merchant_product.label_url} target="_blank" rel="noopener noreferrer"
                   className="flex-shrink-0 w-12 h-12 rounded border border-gray-200 bg-gray-50 overflow-hidden hover:opacity-80 transition-opacity">
+                  {/* User-uploaded storage URL in a fixed-size container. Converting to
+                      next/image is deferred to the UI wave, not skipped: SEC-labels-bucket
+                      moves these to signed URLs, which changes the shape the optimizer's
+                      remotePatterns must match, so converting now would be redone. */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={item.merchant_product.label_url} alt="Etiqueta" className="w-full h-full object-contain" />
                 </a>
               ) : (

@@ -112,7 +112,7 @@ export default function AdminSettingsPage() {
       </section>
 
       <section className="space-y-2">
-        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Botón "Ordenar Productos"</h2>
+        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Botón &quot;Ordenar Productos&quot;</h2>
         <input value={settings.order_button_url}
           onChange={e => setSettings(s => ({ ...s, order_button_url: e.target.value }))}
           placeholder="/catalog o https://..."

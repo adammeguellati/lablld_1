@@ -8,8 +8,8 @@ export default function PrivacyPage() {
         <p className="text-sm text-gray-500 mb-10">Última actualización: agosto 2026</p>
 
         <p>
-          LABLLD ("<strong>nosotros</strong>", "<strong>nuestro</strong>" o "<strong>la Empresa</strong>")
-          opera la plataforma disponible en <strong>app.lablld.com</strong> (el "<strong>Servicio</strong>").
+          LABLLD (&quot;<strong>nosotros</strong>&quot;, &quot;<strong>nuestro</strong>&quot; o &quot;<strong>la Empresa</strong>&quot;)
+          opera la plataforma disponible en <strong>app.lablld.com</strong> (el &quot;<strong>Servicio</strong>&quot;).
           Esta Política de Privacidad describe cómo recopilamos, usamos y protegemos su información personal.
         </p>
 

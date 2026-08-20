@@ -27,8 +27,14 @@ export function CatalogFilters() {
   const [q, setQ] = useState(searchParams.get('q') ?? '')
   const routerRef = useRef(router)
   const paramsRef = useRef(searchParams)
-  routerRef.current = router
-  paramsRef.current = searchParams
+
+  // Kept current in an effect rather than during render: the debounce effect
+  // below must re-run only when q changes, never when router or searchParams
+  // change identity, and writing a ref during render breaks under React 19.
+  useEffect(() => {
+    routerRef.current = router
+    paramsRef.current = searchParams
+  })
 
   useEffect(() => {
     const t = setTimeout(() => {

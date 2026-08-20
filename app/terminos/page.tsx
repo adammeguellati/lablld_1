@@ -9,8 +9,8 @@ export default function TermsPage() {
 
         <p>
           Bienvenido a <strong>LABLLD</strong>. Al acceder o usar nuestra plataforma en
-          <strong> app.lablld.com</strong> (el "<strong>Servicio</strong>"), usted acepta
-          quedar vinculado por estos Términos de Uso ("<strong>Términos</strong>").
+          <strong> app.lablld.com</strong> (el &quot;<strong>Servicio</strong>&quot;), usted acepta
+          quedar vinculado por estos Términos de Uso (&quot;<strong>Términos</strong>&quot;).
           Léalos detenidamente antes de usar el Servicio.
         </p>
 
