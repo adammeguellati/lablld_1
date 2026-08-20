@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import { getAuthUrl } from '@/lib/shopify'
+import { getAuthUrl, SHOPIFY_OAUTH_STATE_COOKIE } from '@/lib/shopify'
 import crypto from 'crypto'
 
 export async function GET(request: NextRequest) {
@@ -21,5 +21,16 @@ export async function GET(request: NextRequest) {
   }
 
   const state = crypto.randomBytes(16).toString('hex')
-  return NextResponse.redirect(getAuthUrl(shop, state))
+  const response = NextResponse.redirect(getAuthUrl(shop, state))
+  // SameSite=Lax, not Strict: the callback arrives as a cross-site top-level
+  // navigation from Shopify, and Strict would withhold the cookie there and
+  // break every install. Ten minutes is the handshake window.
+  response.cookies.set(SHOPIFY_OAUTH_STATE_COOKIE, state, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/api/shopify',
+    maxAge: 600,
+  })
+  return response
 }

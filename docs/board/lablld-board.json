@@ -237,16 +237,16 @@
     {
       "id": "SEC-shopify-oauth-state",
       "title": "OAuth state is generated at app/api/shopify/auth/route.ts:23 and never verified; the callback reads it and discards it, so CSRF protection on the handshake is decorative (Shopify HMAC still applies)",
-      "lane": "loose_ends",
-      "home_lane": "loose_ends",
-      "status": "todo",
+      "lane": "in_flight",
+      "home_lane": "in_flight",
+      "status": "in_flight",
       "priority": "medium",
-      "owner_terminal": "unassigned",
+      "owner_terminal": "pink",
       "gate": "ivan_merge",
       "blocked_on": null,
       "last_checkpoint": "2026-08-20",
       "evidence": null,
-      "notes": "P2 · Source: audit §8.5(b). ADDED-BY-SWEEP."
+      "notes": "P2 · Source: audit §8.5(b). ADDED-BY-SWEEP. WORKED 2026-08-20 by PINK, PR #8. in_flight, not shipped: the gate is ivan_merge and the board JSON wins over the self-merge grant, so this one waits for Ivan. Last of the six W0 cards. CARD CONFIRMED EXACTLY: state was generated with crypto.randomBytes(16) at app/api/shopify/auth/route.ts:23 and stored nowhere, so the callback had nothing to compare against. FIX: the auth route persists the state in an HttpOnly cookie and the callback compares in constant time, 403 on mismatch. The cookie name and the compare live in lib/shopify.ts so the two routes cannot drift. FOUR DELIBERATE DETAILS, recorded because each is a place where the obvious choice is wrong. SameSite=Lax not Strict: the callback is a cross-site top-level navigation from Shopify and Strict would withhold the cookie and break every install, so Strict is the more secure-LOOKING setting and the broken one. State is checked AFTER the HMAC check: HMAC proves Shopify sent it, state proves this browser started it, and the cheaper stronger one runs first. A FAILED CHECK DOES NOT CLEAR THE COOKIE: clearing on failure would let anyone break a real merchant's pending install by hitting the callback URL with a wrong state. It is single-use on every path PAST the check and expires on its own in ten minutes. Length is compared before timingSafeEqual because the caller controls the query parameter and timingSafeEqual throws on a length mismatch. PROVEN against the real exported function, 7 cases: genuine round trip accepts; attacker state, absent state, absent cookie, both absent, wrong length and a single changed character all reject. NEGATIVE ARM: with the guard removed the forged callback is accepted. SCOPE NOTE: the card says Shopify HMAC still applies, and that stays true. This was never an open door; the missing leg was the binding to the browser that started the flow. ALSO REMOVES the eslint-disable added in PR #5 for the unused state read. That marker existed to keep the hole visible; the hole is closed, so it goes. NEEDS A DEPLOYED CHECK, the one thing a unit probe cannot prove: connect a store from /settings/shopify end to end after merge. A 403 Invalid state means the cookie is not surviving the round trip."
     },
     {
       "id": "SEC-cron-secret-timing",

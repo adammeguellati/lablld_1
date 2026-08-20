@@ -1,7 +1,7 @@
 'use server'
 
 import { NextResponse, type NextRequest } from 'next/server'
-import { exchangeCodeForToken, registerOrderWebhook, registerFulfillmentService, registerWebhook, listWebhooksForTopic, deleteWebhook } from '@/lib/shopify'
+import { exchangeCodeForToken, registerOrderWebhook, registerFulfillmentService, registerWebhook, listWebhooksForTopic, deleteWebhook, verifyOAuthState, SHOPIFY_OAUTH_STATE_COOKIE } from '@/lib/shopify'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import crypto from 'crypto'
@@ -10,10 +10,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl
   const shop = searchParams.get('shop')
   const code = searchParams.get('code')
-  // Read and discarded without verification; SEC-shopify-oauth-state closes
-  // this. Kept rather than deleted so the open hole stays visible in code.
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const state = searchParams.get('state')
+  const state = searchParams.get('state') ?? ''
 
   if (!shop || !code) {
     return NextResponse.json({ error: 'Missing parameters' }, { status: 400 })
@@ -27,9 +24,22 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid HMAC' }, { status: 403 })
   }
 
+  const expectedState = request.cookies.get(SHOPIFY_OAUTH_STATE_COOKIE)?.value ?? ''
+  if (!verifyOAuthState(state, expectedState)) {
+    return NextResponse.json({ error: 'Invalid state' }, { status: 403 })
+  }
+
+  // Single use, cleared on every path that got past the check. A failed check
+  // deliberately leaves it alone: burning a pending state on a forged callback
+  // would let anyone break a real merchant's install by guessing the URL.
+  const consumeState = <T extends NextResponse>(response: T): T => {
+    response.cookies.delete(SHOPIFY_OAUTH_STATE_COOKIE)
+    return response
+  }
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.redirect(new URL('/login', request.url))
+  if (!user) return consumeState(NextResponse.redirect(new URL('/login', request.url)))
 
   const db = createAdminClient()
 
@@ -40,14 +50,14 @@ export async function GET(request: NextRequest) {
     .maybeSingle()
 
   if (existingStore && existingStore.merchant_id !== user.id) {
-    return NextResponse.redirect(new URL('/settings?tab=tiendas&error=store_already_connected', request.url))
+    return consumeState(NextResponse.redirect(new URL('/settings?tab=tiendas&error=store_already_connected', request.url)))
   }
 
   let accessToken: string
   try {
     accessToken = await exchangeCodeForToken(shop, code)
   } catch {
-    return NextResponse.redirect(new URL('/settings?tab=tiendas&error=token_exchange_failed', request.url))
+    return consumeState(NextResponse.redirect(new URL('/settings?tab=tiendas&error=token_exchange_failed', request.url)))
   }
 
   let webhookId: string | null = null
@@ -92,5 +102,5 @@ export async function GET(request: NextRequest) {
   const redirectUrl = new URL('/settings/shopify', request.url)
   if (fsError) redirectUrl.searchParams.set('fs_error', encodeURIComponent(fsError))
   if (foWebhookError) redirectUrl.searchParams.set('fo_webhook_error', encodeURIComponent(foWebhookError))
-  return NextResponse.redirect(redirectUrl)
+  return consumeState(NextResponse.redirect(redirectUrl))
 }

@@ -36,6 +36,18 @@ export function verifyWebhookHmac(rawBody: string, hmacHeader: string): boolean 
 // signed with SHOPIFY_API_SECRET, a Dev Dashboard registration with its own
 // SHOPIFY_WEBHOOK_SECRET. Both are accepted, so neither registration path is
 // silently rejected.
+export const SHOPIFY_OAUTH_STATE_COOKIE = 'shopify_oauth_state'
+
+// The state parameter only proves anything if the value coming back is compared
+// against one this browser was given. Length is checked first because the
+// caller controls it and timingSafeEqual throws on a length mismatch.
+export function verifyOAuthState(received: string, expected: string): boolean {
+  if (!received || !expected || received.length !== expected.length) return false
+  try {
+    return crypto.timingSafeEqual(Buffer.from(received), Buffer.from(expected))
+  } catch { return false }
+}
+
 export function verifyFulfillmentHmac(rawBody: string, hmacHeader: string): boolean {
   const trySecret = (secret: string) => {
     try {
