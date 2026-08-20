@@ -1,24 +1,13 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { after } from 'next/server'
-import crypto from 'crypto'
 import { createAdminClient } from '@/lib/supabase/admin'
-
-function verifyHmac(rawBody: string, hmacHeader: string): boolean {
-  const trySecret = (secret: string) => {
-    try {
-      const hash = crypto.createHmac('sha256', secret).update(rawBody, 'utf8').digest('base64')
-      if (hash.length !== hmacHeader.length) return false
-      return crypto.timingSafeEqual(Buffer.from(hash), Buffer.from(hmacHeader))
-    } catch { return false }
-  }
-  return trySecret(process.env.SHOPIFY_API_SECRET!) || trySecret(process.env.SHOPIFY_WEBHOOK_SECRET!)
-}
+import { verifyFulfillmentHmac } from '@/lib/shopify'
 
 export async function POST(request: NextRequest) {
   const rawBody = await request.text()
   const hmacHeader = request.headers.get('x-shopify-hmac-sha256') ?? ''
 
-  if (!verifyHmac(rawBody, hmacHeader)) {
+  if (!verifyFulfillmentHmac(rawBody, hmacHeader)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

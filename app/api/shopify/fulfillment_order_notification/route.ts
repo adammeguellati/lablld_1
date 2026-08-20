@@ -1,9 +1,19 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { after } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { verifyFulfillmentHmac } from '@/lib/shopify'
 
+// Shopify calls this from the fulfillment service callback_url registered in
+// registerFulfillmentService (lib/shopify.ts), which is why proxy.ts lets
+// /api/shopify/* through unauthenticated. Until this check existed, anyone
+// could reach a service-role write here.
 export async function POST(request: NextRequest) {
   const body = await request.text()
+  const hmacHeader = request.headers.get('x-shopify-hmac-sha256') ?? ''
+
+  if (!verifyFulfillmentHmac(body, hmacHeader)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
 
   after(async () => {
     try {
