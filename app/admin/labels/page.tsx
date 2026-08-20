@@ -2,6 +2,7 @@ import Image from 'next/image'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { signLabelUrls } from '@/lib/storage'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { LabelActions } from '@/components/admin/label-actions'
@@ -48,6 +49,9 @@ export default async function AdminLabelsPage() {
     rows.forEach((r) => { r.productName = nameMap.get(`${r.merchant_id}:${r.label_url}`) ?? null })
   }
 
+  // nameMap above keys on the STORED label_url, so signing must not touch it.
+  const viewUrls = await signLabelUrls(rows.map((r) => r.label_url))
+
   return (
     <div>
       <h1 className="text-2xl font-bold mb-6">Aprobación de etiquetas</h1>
@@ -65,11 +69,12 @@ export default async function AdminLabelsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {rows.map((row) => (
+            {rows.map((row, i) => (
               <TableRow key={row.id}>
                 <TableCell>
-                  <a href={row.label_url} target="_blank" rel="noopener noreferrer">
-                    <Image src={row.label_url} alt="Etiqueta" width={60} height={60}
+                  <a href={viewUrls[i] ?? row.label_url} target="_blank" rel="noopener noreferrer">
+                    <Image src={viewUrls[i] ?? row.label_url} alt="Etiqueta" width={60} height={60}
+                      unoptimized
                       className="rounded border object-contain bg-gray-50" />
                   </a>
                 </TableCell>

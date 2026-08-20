@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { updateProduct, updateVariantPrice } from '@/lib/shopify'
 import { generateMockup } from '@/lib/sudomock'
+import { signLabelUrl, LABEL_FETCH_TTL } from '@/lib/storage'
 import type { MerchantProduct } from '@/types'
 
 const MOCKUP_LIMIT = 6
@@ -115,7 +116,8 @@ export async function generateProductMockupAction(
   if (!product?.mockup_template_id || !product?.mockup_smart_object_uuid) return { error: 'Sin plantilla de mockup configurada', mockupUrl: null, creditsUsed }
 
   try {
-    const mockupUrl = await generateMockup(product.mockup_template_id, product.mockup_smart_object_uuid, mp.label_url, product.mockup_so_width, product.mockup_so_height)
+    const labelFetchUrl = (await signLabelUrl(mp.label_url, LABEL_FETCH_TTL)) ?? mp.label_url
+    const mockupUrl = await generateMockup(product.mockup_template_id, product.mockup_smart_object_uuid, labelFetchUrl, product.mockup_so_width, product.mockup_so_height)
     const newCredits = creditsUsed + 1
     await Promise.all([
       db.from('merchant_products').update({ mockup_url: mockupUrl }).eq('id', merchantProductId),

@@ -76,10 +76,11 @@ export function OrderTabPanel({ order, tab, currentStep }: { order: Order; tab: 
             <div key={item.id} className="flex items-start gap-2.5 mb-3">
               {item.merchant_product?.label_url && (
                 <div className="w-10 h-10 rounded border border-gray-200 bg-white overflow-hidden shrink-0">
-                  {/* User-uploaded storage URL in a fixed-size container. Converting to
-                      next/image is deferred to the UI wave, not skipped: SEC-labels-bucket
-                      moves these to signed URLs, which changes the shape the optimizer's
-                      remotePatterns must match, so converting now would be redone. */}
+                  {/* Stays a plain img, and this is now a decision rather than a
+                      deferral. The src is a SIGNED, expiring URL, so every render
+                      is a fresh URL and therefore a fresh optimizer cache miss and
+                      a fresh billable transformation. next/image is the wrong tool
+                      for a short-lived URL. */}
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={item.merchant_product.label_url} alt="" className="w-full h-full object-contain" />
                 </div>
