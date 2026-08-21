@@ -283,7 +283,7 @@ marked. Grouped by what unblocks it.
 | card | unblock |
 |---|---|
 | `CHORE-spanish-auth-emails` | **Adam verifies `lablld.com` in Resend DNS** → Supabase custom SMTP → Spanish templates. Until then every reset email is English |
-| `CHORE-verify-wompi-price-unit` | **P1, and it gates real money.** `lib/wompi.ts` multiplies COP by 100 at four sites to build `amount_in_cents`, and COP is not conventionally a minor-unit currency. If that is wrong every charge is off by 100× and unrecoverable once real money moves. Prove it against one sandbox transaction and paste the amount back |
+| ~~`CHORE-verify-wompi-price-unit`~~ | **RESOLVED 2026-08-21, no longer a blocker.** Wompi's hosted checkout displays **$119.000** for Plan Esencial at the payment-method screen, so the ×100 to `amount_in_cents` is correct. See the W5 note |
 | `VERIFY-shopify-e2e` | A real Shopify store round trip |
 | `CHORE-design-bundle-location` | Your call on where the untracked 1.9 MB bundle should live |
 
@@ -434,12 +434,10 @@ would be guessing which you will pick.
 
 ## Rulings recorded
 
-- **Wompi** — `CHORE-verify-wompi-price-unit` is **blocked on you**, multiplier
-  untouched. Recorded as doctrine, not just status: reasoning about a payment
-  API's units is exactly the kind of confident wrong answer that costs 100× in
-  one direction, and the number Wompi's own dashboard displays is the only
-  evidence that settles it. `0007` is unaffected — it decides what the **column**
-  holds, not what Wompi receives, and the two were kept apart deliberately.
+- **Wompi** — was blocked on you with the multiplier untouched; **resolved the
+  same day, see the postscript below.** `0007` is unaffected either way — it
+  decides what the **column** holds, not what Wompi receives, and the two were
+  kept apart deliberately.
 - **The cron/fulfillment findings and the `safeServerClient` catch** — accepted,
   no further action.
 - **Ruling (a) resolution** — accepted; both `in_flight` cards ride your next
@@ -455,3 +453,36 @@ above are code that is written and waiting on your eyes, and `CHORE-repo-weight`
 is waiting on one word from you. Neither is unbuilt work.
 
 §9 above is still the runway; only §9.3 has shrunk — Playwright is answered.
+
+---
+
+## Postscript — Wompi resolved, 2026-08-21
+
+**The ×100 is correct.** Wompi's own hosted checkout renders **$119.000** for
+Plan Esencial, matching `WOMPI_STARTER_PRICE_COP` exactly.
+`CHORE-verify-wompi-price-unit` is **shipped**.
+
+**My reasoning was wrong, and the instruction not to act on it was right.** I
+argued that COP has no minor unit and that the ×100 looked suspicious. It is
+right. That is the whole case for settling a payment API's units empirically:
+the argument was coherent, confident, and would have introduced a 100× error in
+the direction nobody checks.
+
+**Verified at the payment-method selection screen, and that is complete
+evidence, not partial.** That screen is where Wompi displays the amount it
+received, which is exactly where the unit question is answered. No charge was
+completed and none is planned — completing one would have proven nothing further
+about units.
+
+**Reopen condition, narrow:** only if a real charge ever settles at an amount
+other than $119.000 for Plan Esencial. There is no pending event and nothing
+further is arriving.
+
+**Two practices promoted out of this run**, both now in `BOARD-SPEC.md`:
+
+- A **required check is added to branch protection only after the job has been
+  watched pass** on a real PR. `e2e` reported green twice before it was required.
+- A **deletion card re-derives reachability against the current tree, and
+  separately checks for paths built at runtime**, which a name-matching scan
+  cannot see. `primera_foto.png` and `primera_foto_-.png` are two characters
+  apart and only the second is used.

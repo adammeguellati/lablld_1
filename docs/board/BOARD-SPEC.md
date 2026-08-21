@@ -229,11 +229,17 @@ Granted by Ivan on 2026-08-20, once branch protection went live on `main`.
 Before that date `green_self_merge` named an authority that could not be
 exercised, because there were no required checks to be green.
 
-**What protection enforces on `main`:** pull requests are mandatory, the three
+**What protection enforces on `main`:** pull requests are mandatory, the **four**
 required checks are `typecheck`, `lint`, `build` and `e2e`, and there is **no
-bypass**. `e2e` was added to branch protection on 2026-08-21, once the job had
-reported green on a real PR — a required check is only added after it has been
-watched pass, never before.
+bypass**.
+
+**A required check is added only after the job has been watched pass on a real
+PR.** `e2e` was added on 2026-08-21, after reporting green twice. The rule exists
+because the failure it prevents is silent: a check that never runs, or that
+cannot fail, still shows green and still reads as coverage. It is the same reason
+`INFRA-ci-and-tests` deliberately shipped with no test job — an empty required
+check is worse than no check.
+
 Those four strings are job ids in `.github/workflows/ci.yml`. Renaming a job
 renames its check and GitHub then waits forever on a check nothing reports, so
 the ids are load-bearing configuration, not labels.
@@ -386,6 +392,42 @@ At every checkpoint: update the affected card(s) in the JSON (status, evidence,
 `last_checkpoint`), run the validator, then re-render the artifact. Never mark a
 card shipped before its evidence exists - the validator will reject the commit,
 which is the point.
+
+## Deletion cards re-derive reachability
+
+Promoted to doctrine on 2026-08-21, after two deletion sweeps in which the
+written list was wrong both times.
+
+> **A card that deletes files establishes what is unreachable by SCANNING THE
+> CURRENT TREE, never by reading a list — and separately checks for paths built
+> at runtime, which a name-matching scan cannot see.**
+
+Both halves were earned rather than assumed.
+
+**The list rots.** `CODE-delete-dead-files` named `components/ui/sonner.tsx` and
+`components/merchant/label-uploader.tsx` as dead. Both were live by the time the
+card was worked — W2 mounted the Toaster and W1 put the uploader in the create
+flow. Deleting from that list would have broken the app. The list was accurate
+when it was written; two waves of work happened in between, which is exactly the
+condition a deletion card is worked under.
+
+**A name scan cannot see a constructed path.** An `src` built from a template
+literal puts no filename in the source, so every asset it can reach looks
+unreferenced. The check is cheap — grep for template literals in image and URL
+positions, confirm each resolves to data rather than to a static file — and
+skipping it is how a scan that looks rigorous deletes something in use.
+
+**The margin is thinner than it looks.** `public/onboarding/primera_foto.png` was
+deleted while `primera_foto_-.png` was kept. They differ by two characters and
+the live auth screens use the second. Nothing about reading a prose list would
+have distinguished them.
+
+**State the remainder.** Where a sweep leaves files behind on purpose — because
+they are vendored, or because keeping them is a preference rather than a fact —
+say which and why on the card. A sweep that silently stops short reads as
+complete.
+
+---
 
 ---
 
