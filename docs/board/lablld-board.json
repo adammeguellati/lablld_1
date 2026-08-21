@@ -263,16 +263,20 @@
     {
       "id": "SEC-cron-secret-timing",
       "title": "app/api/cron/billing/route.ts:10 compares the bearer token with !==; the four other secret checks in the codebase use timingSafeEqual",
-      "lane": "loose_ends",
+      "lane": "shipped",
       "home_lane": "loose_ends",
-      "status": "todo",
+      "status": "shipped",
       "priority": "low",
       "owner_terminal": "unassigned",
       "gate": "green_self_merge",
       "blocked_on": null,
-      "last_checkpoint": "2026-08-20",
-      "evidence": null,
-      "notes": "P3 · Source: audit §8.5(f). ADDED-BY-SWEEP."
+      "last_checkpoint": "2026-08-21",
+      "evidence": {
+        "kind": "pr",
+        "ref": "#41",
+        "at": "2026-08-21"
+      },
+      "notes": "P3 · Source: audit §8.5(f). ADDED-BY-SWEEP. Bundled into PR #41 with four other small correctness and hardening cards; the diffs are separate files and stay reviewable together. Non-visual, ships on merge. The bearer token is compared with crypto.timingSafeEqual instead of !==. The length check stays and comes FIRST, deliberately: timingSafeEqual throws on unequal lengths, and the length of a secret is not the secret. FAIL-CLOSED ADDED while I was in there: with CRON_SECRET unset, the old code compared against the literal string \"Bearer undefined\", so anyone sending exactly that would have been authorized on a misconfigured deploy. It now returns false before comparing anything. NEGATIVE ARMS, run by hand: correct token passes; same-length-one-byte-off, prefix-only, correct-plus-suffix, absent and empty headers all fail; and with CRON_SECRET unset nothing authorizes. Seven cases, all as expected."
     },
     {
       "id": "CODE-remove-stripe",
@@ -331,30 +335,38 @@
     {
       "id": "CODE-explicit-merchant-delete-chain",
       "title": "Add merchant_labels to the delete chain in app/api/admin/merchants/[id]/route.ts:52-61; the FK cascade covers it today but the intent is implicit",
-      "lane": "loose_ends",
+      "lane": "shipped",
       "home_lane": "loose_ends",
-      "status": "todo",
+      "status": "shipped",
       "priority": "medium",
       "owner_terminal": "unassigned",
       "gate": "green_self_merge",
       "blocked_on": null,
-      "last_checkpoint": "2026-08-20",
-      "evidence": null,
-      "notes": "P2 · Source: schema notes C15."
+      "last_checkpoint": "2026-08-21",
+      "evidence": {
+        "kind": "pr",
+        "ref": "#41",
+        "at": "2026-08-21"
+      },
+      "notes": "P2 · Source: schema notes C15. Bundled into PR #41 with four other small correctness and hardening cards; the diffs are separate files and stay reviewable together. Non-visual, ships on merge. merchant_labels is added to the delete chain in app/api/admin/merchants/[id]/route.ts, per schema notes C15. It has an FK to merchants, so the merchant delete would either fail outright or orphan the label rows depending on that constraint’s action — and nobody had checked which. Deleting explicitly means the answer stops mattering."
     },
     {
       "id": "CODE-storage-orphan-cleanup",
       "title": "Delete storage objects when merchant, merchant_labels or merchant_products rows are deleted; label artwork currently outlives its rows indefinitely, and now outlives cascaded rows in a public bucket",
-      "lane": "loose_ends",
+      "lane": "shipped",
       "home_lane": "loose_ends",
-      "status": "todo",
+      "status": "shipped",
       "priority": "medium",
       "owner_terminal": "unassigned",
       "gate": "green_self_merge",
       "blocked_on": null,
-      "last_checkpoint": "2026-08-20",
-      "evidence": null,
-      "notes": "P2 · Source: schema amendment finding, previously unowned. Interacts with SEC-labels-bucket: while the bucket is public, an orphan is also an exposure."
+      "last_checkpoint": "2026-08-21",
+      "evidence": {
+        "kind": "pr",
+        "ref": "#41",
+        "at": "2026-08-21"
+      },
+      "notes": "P2 · Source: schema amendment finding, previously unowned. Interacts with SEC-labels-bucket: while the bucket is public, an orphan is also an exposure. Bundled into PR #41 with four other small correctness and hardening cards; the diffs are separate files and stay reviewable together. Non-visual, ships on merge. lib/storage-cleanup.ts collects a merchant’s label URLs across BOTH tables that store one and removes the objects. Wired into the admin merchant delete and the admin product delete. ORDERING IS DELIBERATE: URLs are collected BEFORE the rows go, because the URLs only exist on them; the objects are removed AFTER, and best-effort, so a storage failure can never leave a merchant half-deleted. An orphaned object is a cleanup problem; a half-deleted account is not. THE GUARD THAT MAKES IT SAFE is labelObjectPath: only a labels-bucket public URL resolves to a path, so the cleanup cannot be pointed at product-images or at an arbitrary URL. NEGATIVE ARM run by hand over six inputs — a labels URL and a signed labels URL resolve; a product-images URL, an off-host URL, null and empty string all resolve to null. All six as expected. This also closes the exposure half noted on the card: while the bucket was public an orphan was reachable by anyone holding the path. The bucket is private now, so the remaining cost is storage, but the orphan is gone either way."
     },
     {
       "id": "CODE-admin-emails-sync",
@@ -391,16 +403,20 @@
     {
       "id": "CODE-fulfillment-notification-timeout",
       "title": "/api/shopify/fulfillment_order_notification retries with setTimeout for up to ~22s inside after() with no maxDuration export; the write is silently dropped when the function is cut off",
-      "lane": "loose_ends",
+      "lane": "shipped",
       "home_lane": "loose_ends",
-      "status": "todo",
+      "status": "shipped",
       "priority": "medium",
       "owner_terminal": "unassigned",
       "gate": "green_self_merge",
       "blocked_on": null,
-      "last_checkpoint": "2026-08-20",
-      "evidence": null,
-      "notes": "P2 · Source: audit §8.5(e). ADDED-BY-SWEEP."
+      "last_checkpoint": "2026-08-21",
+      "evidence": {
+        "kind": "pr",
+        "ref": "#41",
+        "at": "2026-08-21"
+      },
+      "notes": "P2 · Source: audit §8.5(e). ADDED-BY-SWEEP. Bundled into PR #41 with four other small correctness and hardening cards; the diffs are separate files and stay reviewable together. Non-visual, ships on merge. THE BUG WAS WORSE THAN \"retries too long\": the schedule slept 0 + 1.5 + 3 + 4.5 + 6 + 7.5 = 22.5 SECONDS across six attempts, which outlives the function on any default budget. So the later attempts never ran at all, and when the orders/create webhook had not committed yet the fulfillment id was silently never written — the retry loop that existed to fix that race was itself being killed by it. FIXED: flat 1.2s backoff, an explicit 8s RETRY_BUDGET_MS checked before each sleep, and maxDuration = 30 on the route so the budget is comfortably inside it. Same six attempts, now all of them actually run."
     },
     {
       "id": "CODE-fix-lint-errors",
@@ -459,16 +475,20 @@
     {
       "id": "CODE-route-handler-use-server",
       "title": "app/api/shopify/callback/route.ts:1 opens with 'use server', which is meaningless in a route handler",
-      "lane": "loose_ends",
+      "lane": "shipped",
       "home_lane": "loose_ends",
-      "status": "todo",
+      "status": "shipped",
       "priority": "low",
       "owner_terminal": "unassigned",
       "gate": "green_self_merge",
       "blocked_on": null,
-      "last_checkpoint": "2026-08-20",
-      "evidence": null,
-      "notes": "P3 · Source: audit §8.5(c). ADDED-BY-SWEEP."
+      "last_checkpoint": "2026-08-21",
+      "evidence": {
+        "kind": "pr",
+        "ref": "#41",
+        "at": "2026-08-21"
+      },
+      "notes": "P3 · Source: audit §8.5(c). ADDED-BY-SWEEP. Bundled into PR #41 with four other small correctness and hardening cards; the diffs are separate files and stay reviewable together. Non-visual, ships on merge. The directive is removed from app/api/shopify/callback/route.ts and replaced with a comment saying why it must not come back. A route handler already runs only on the server; the directive turns every export into a server ACTION, which route handlers are not. Inert at best, misleading at worst."
     },
     {
       "id": "CODE-error-boundaries",

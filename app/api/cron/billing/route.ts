@@ -1,3 +1,4 @@
+import { timingSafeEqual } from 'node:crypto'
 import { NextResponse, type NextRequest } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { chargePaymentSource, getPlanPriceCOP } from '@/lib/wompi'
@@ -6,9 +7,20 @@ import type { Plan } from '@/types'
 export const runtime = 'nodejs'
 export const maxDuration = 300
 
+// `!==` on a secret leaks its length and, in principle, its prefix through
+// timing. timingSafeEqual needs equal-length buffers, so the length check is
+// done first and deliberately: length is not the secret.
+function authorized(header: string | null): boolean {
+  const secret = process.env.CRON_SECRET
+  if (!secret) return false
+  const expected = Buffer.from(`Bearer ${secret}`)
+  const got = Buffer.from(header ?? '')
+  if (got.length !== expected.length) return false
+  return timingSafeEqual(got, expected)
+}
+
 export async function GET(req: NextRequest) {
-  const auth = req.headers.get('authorization')
-  if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!authorized(req.headers.get('authorization'))) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   }
 

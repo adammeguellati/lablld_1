@@ -1,5 +1,6 @@
-'use server'
-
+// No 'use server' here: a route handler already runs only on the server, and
+// the directive turns every export into a server ACTION, which route handlers
+// are not. It was inert at best and misleading at worst.
 import { NextResponse, type NextRequest } from 'next/server'
 import { exchangeCodeForToken, registerOrderWebhook, registerFulfillmentService, registerWebhook, listWebhooksForTopic, deleteWebhook, verifyOAuthState, SHOPIFY_OAUTH_STATE_COOKIE } from '@/lib/shopify'
 import { createClient } from '@/lib/supabase/server'
