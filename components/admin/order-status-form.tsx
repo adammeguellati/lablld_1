@@ -72,7 +72,10 @@ export function OrderStatusForm({ orderId, status, productCostCop }: Props) {
           exec(() => confirmQuoteAction(orderId, { shippingCostCop: shippingCop, carrier: carrier.trim(), estimatedDelivery: estimatedDelivery.trim() }))
         }}
         disabled={isPending || shippingCop <= 0 || !carrier.trim() || !estimatedDelivery.trim()}
-        className="w-full px-4 py-2.5 bg-emerald-600 text-white rounded text-sm font-semibold hover:bg-emerald-700 disabled:opacity-50">
+        // The design specifies the DISABLED colours for this gate rather than a
+        // dimmed primary, because the three-field requirement is the point of the
+        // control and a 50%-opacity green still reads as "nearly ready".
+        className="w-full rounded-[13px] px-4 py-3 text-[14.5px] font-medium transition-colors bg-[#1D1E20] text-white hover:bg-[#F97316] disabled:bg-[#E9E9ED] disabled:text-[#AEAEB2] disabled:hover:bg-[#E9E9ED]">
         {isPending ? 'Enviando...' : 'Enviar cotización al merchant'}
       </button>
     </div>

@@ -5,22 +5,14 @@ import { ChevronDown } from 'lucide-react'
 import { formatCOP, formatDateShort } from '@/lib/utils'
 import { OrderTabPanel } from './order-tab-panel'
 import type { Order, OrderStatus } from '@/types'
+import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from '@/lib/order-status'
 
 export type TabId = 'info' | 'cotizacion' | 'pago' | 'pagado' | 'produccion' | 'enviado' | 'entregado'
 
-export const STATUS_LABELS: Record<OrderStatus, string> = {
-  quote_pending: 'Pendiente de cotización', payment_pending: 'Pendiente de pago', pending: 'Pendiente',
-  paid: 'Pagada', payment_failed: 'Pago fallido', in_production: 'En producción',
-  shipped: 'Enviada', delivered: 'Entregada', cancelled: 'Cancelada',
-}
-
-export const STATUS_COLORS: Record<OrderStatus, string> = {
-  quote_pending: 'bg-[#FDEFE0] text-[#B4690E]', payment_pending: 'bg-[#FDEFE0] text-[#B4690E]',
-  pending: 'bg-[#FDEFE0] text-[#B4690E]', paid: 'bg-[#E6F6EB] text-[#16A34A]',
-  payment_failed: 'bg-[#FBE9E6] text-[#C0303B]', in_production: 'bg-[#EDF4FC] text-[#1D5EA8]',
-  shipped: 'bg-[#EFEBFB] text-[#6E56CF]', delivered: 'bg-[#E6F6EB] text-[#16A34A]',
-  cancelled: 'bg-[#F0F0F3] text-[#86868B]',
-}
+// Re-exported from lib/order-status.ts, which is now the one place the vocabulary
+// lives. Kept as named exports here so existing importers do not have to move.
+export const STATUS_LABELS = ORDER_STATUS_LABELS
+export const STATUS_COLORS = ORDER_STATUS_COLORS
 
 const STATUS_DOT: Record<OrderStatus, string> = {
   quote_pending: 'bg-orange-500', payment_pending: 'bg-orange-500', pending: 'bg-amber-400',
