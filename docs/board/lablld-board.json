@@ -867,30 +867,38 @@
     {
       "id": "CHORE-rewrite-claude-md",
       "title": "CLAUDE.md names Stripe as the payment system, Dynamic Mockups as the renderer, and a label gate the code bypasses; it omits Wompi, Resend, SudoMock, CRON_SECRET and SHOPIFY_WEBHOOK_BASE_URL. Rewrite its stack, env and schema sections against the code",
-      "lane": "loose_ends",
+      "lane": "shipped",
       "home_lane": "loose_ends",
-      "status": "todo",
+      "status": "shipped",
       "priority": "medium",
       "owner_terminal": "unassigned",
       "gate": "green_self_merge",
       "blocked_on": null,
-      "last_checkpoint": "2026-08-20",
-      "evidence": null,
-      "notes": "P2 · Source: audit R7, §8.8. ADDED-BY-SWEEP. Do it after CODE-remove-stripe and CODE-remove-dead-integrations, or it documents a tree that is about to change."
+      "last_checkpoint": "2026-08-21",
+      "evidence": {
+        "kind": "pr",
+        "ref": "#45",
+        "at": "2026-08-21"
+      },
+      "notes": "P2 · Source: audit R7, §8.8. ADDED-BY-SWEEP. Do it after CODE-remove-stripe and CODE-remove-dead-integrations, or it documents a tree that is about to change. SHIPPED 2026-08-21 in PR #45, and deliberately LAST in the wave — the card said to do it after CODE-remove-stripe and CODE-remove-dead-integrations or it would document a tree about to change. Both shipped in W2, so the timing held. CORRECTED: Stripe out and Wompi in across stack, env, flow, plan management and the OrderStatus comments; Dynamic Mockups replaced by SudoMock; Envia removed. Added the five env vars the doc never mentioned — CRON_SECRET, SHOPIFY_WEBHOOK_BASE_URL, SUDOMOCK_API_KEY, RESEND_*, and the two new support ones. THE STRIPE WEBHOOK SECTION BECAME THE CRON SECTION, which is the real correction and not a rename: Wompi has no subscription object, so the billing cycle lives in the database and the daily cron executes it. Documenting Stripe webhook events would have described a mechanism that never existed here. THE LABEL GATE THE CARD FLAGGED IS NOW STATED HONESTLY rather than quietly fixed: saveMerchantProductAction sets label_status approved on upload, so the /admin/labels queue runs on merchant_labels and not on merchant_products. Both positions coexist and the contradiction stays open on PROD-label-approval-fork. The doc says so instead of implying a gate the code bypasses. THE FILE MANIFEST IS DELETED, not updated. It listed twenty-odd files that no longer exist. A hand-maintained inventory of a tree that changes weekly rots, and while it rots it lies with the authority of a document. It is replaced by a short list of the things that are genuinely NOT discoverable by reading folders — proxy.ts, the safe-client throw semantics, the three vocabulary modules, the one file allowed to write to stderr, and the label thumbnail. ADDED A PRECEDENCE RULE at the end: this file describes how the system is built, the board says what is left, and when they disagree the board wins."
     },
     {
       "id": "CHORE-write-readme",
       "title": "README.md is the untouched create-next-app template; there is no setup guide and the only dev script (dev.bat) is Windows-only with a pinned ngrok domain",
-      "lane": "loose_ends",
+      "lane": "shipped",
       "home_lane": "loose_ends",
-      "status": "todo",
+      "status": "shipped",
       "priority": "medium",
       "owner_terminal": "unassigned",
       "gate": "green_self_merge",
       "blocked_on": null,
-      "last_checkpoint": "2026-08-20",
-      "evidence": null,
-      "notes": "P2 · Source: audit §8.8, §8.9. ADDED-BY-SWEEP. The setup guide is what launch gate G1 (parity on Adam's stack) is run from."
+      "last_checkpoint": "2026-08-21",
+      "evidence": {
+        "kind": "pr",
+        "ref": "#45",
+        "at": "2026-08-21"
+      },
+      "notes": "P2 · Source: audit §8.8, §8.9. ADDED-BY-SWEEP. The setup guide is what launch gate G1 (parity on Adam's stack) is run from. SHIPPED 2026-08-21 in PR #45. README.md was the untouched create-next-app template. WRITTEN AS THE THING G1 IS RUN FROM, because the card says the setup guide is what launch gate G1 (parity on Adam’s stack) is counted from — so it says that outright, and adds that a failure in that section is a bug in the README rather than in the reader. CONTENTS: what the product is and that there is no separate admin login; prerequisites with the Node pin; the minimum env set to boot at all, pointing at .env.example for the annotated detail rather than duplicating it; ALL SEVEN MIGRATIONS in order with what each does and the warning that 0006 is not cleanly reversible and 0007 has a mandatory pre-check; the four commands and the note that three of them are the required checks whose JOB IDS are the branch-protection names; the ngrok ritual for Shopify webhooks; the service table; and the conventions that actually bite. dev.bat IS DOCUMENTED AS WHAT IT IS rather than as the happy path: it pins one specific ngrok domain and works for exactly one person. The \"ya no forman parte del stack\" list is repeated here because a newcomer reads the README, not the board."
     },
     {
       "id": "CHORE-design-bundle-location",
@@ -916,9 +924,9 @@
       "owner_terminal": "unassigned",
       "gate": "green_self_merge",
       "blocked_on": null,
-      "last_checkpoint": "2026-08-20",
+      "last_checkpoint": "2026-08-21",
       "evidence": null,
-      "notes": "P3 · Source: audit R12, §8.9. ADDED-BY-SWEEP. Most of the 86 MB is public/onboarding/, so the size of this job depends on PROD-onboarding-fate. The stray .xlsx in a public path is worth checking on its own merits."
+      "notes": "P3 · Source: audit R12, §8.9. ADDED-BY-SWEEP. Most of the 86 MB is public/onboarding/, so the size of this job depends on PROD-onboarding-fate. The stray .xlsx in a public path is worth checking on its own merits. PARTIALLY DONE 2026-08-21 in PR #45; the card STAYS OPEN with an exact remainder rather than being closed on a partial. public/ goes from 86 MB to 64 MB. Removed: the five create-next-app placeholder SVGs, public/image1.png (13.65 MB, referenced by nothing), public/onboarding/primera_foto (1).png (7.91 MB, a literal \" (1)\" duplicate of a file whose SIBLING primera_foto_-.png is the one actually used), and public/onboarding/Tablas_oficios.xlsx. THE SPREADSHEET WAS CHECKED ON ITS OWN MERITS, as the card asked, and the answer is reassuring: its two sheets are \"Tablas oficios\" and \"Decreto 1607\" — Colombia’s public occupational-risk classification decree. Reference data, not personal data, so its presence at a guessable public URL was dead weight rather than an exposure. Checked by reading the workbook STRUCTURE, not its contents. WHAT REMAINS, and why it is a decision rather than more sweeping: 16 files and roughly 30 MB in public/onboarding/ are unreferenced by any app code, but they are named like exported design comps — Elige_el_estilo1_-_LABLLD.png, Quien_Eres_-_LABLLD.png, ahora_es_tu_turno_-_image.png and so on. Adam ruled onboarding stays as-is and its redesign is a future design session, so these may be wanted for that session. Deleting them is safe for the running app and recoverable from git either way, but it is Ivan’s call, not a sweep. ALSO REMAINING, and separate: none of the surviving images is optimised. The largest still in use is 7.91 MB. That is a build-pipeline question rather than a deletion one."
     },
     {
       "id": "CHORE-untrack-claude-settings",
@@ -941,16 +949,20 @@
     {
       "id": "CHORE-handoff-doc-corrections",
       "title": "Fix the internal contradictions in the design bundle: SCREENS.md omits Inicio from the merchant nav while Configuracion Tiendas.dc.html includes it; sidebar width is 260px in the docs and 264px in the prototype; reference/ is described as a catalog/PDP spec but is an order-flow diagram and the only doc naming Wompi; Configuracion Tiendas.dc.html has no SCREENS.md section or build step; the logo asset is misspelled labdll-logo.png",
-      "lane": "loose_ends",
+      "lane": "shipped",
       "home_lane": "loose_ends",
-      "status": "todo",
+      "status": "shipped",
       "priority": "low",
       "owner_terminal": "unassigned",
       "gate": "green_self_merge",
       "blocked_on": null,
-      "last_checkpoint": "2026-08-20",
-      "evidence": null,
-      "notes": "P3 · Source: design inventory Q13. ADDED-BY-SWEEP. The 260 vs 264px and the Inicio omission both land on UI cards, so fix them before those cards are built rather than after."
+      "last_checkpoint": "2026-08-21",
+      "evidence": {
+        "kind": "pr",
+        "ref": "#45",
+        "at": "2026-08-21"
+      },
+      "notes": "P3 · Source: design inventory Q13. ADDED-BY-SWEEP. The 260 vs 264px and the Inicio omission both land on UI cards, so fix them before those cards are built rather than after. SHIPPED 2026-08-21 in PR #45 as ERRATA IN THE TRACKED INVENTORY, not as edits to the bundle — and that is the finding, not a shortcut. design_handoff_lablld_dashboard/ is gitignored and never committed. An edit inside it is invisible to git, to CI and to anyone who did not receive the same zip, so correcting the bundle in place would produce two divergent copies with no way to tell which is current. DESIGN-HANDOFF-INVENTORY.md is the file both readers actually share, so section 6 carries all five corrections. THE TIMING THIS CARD ASKED FOR WAS MISSED and the errata says so: it wanted the 260-vs-264px and the Inicio omission fixed BEFORE the UI cards were built, and those cards shipped on the 2026-08-21 review. Every item was resolved during the build anyway because the code was re-derived rather than taken from the doc, so nothing shipped wrong. The record is late, not the work. ONE ITEM IS MORE THAN A TYPO: reference/ is described as a catalogue/PDP spec, is actually an order-flow diagram, and is the ONLY document in the bundle that names Wompi — which makes it more load-bearing than its own description suggests."
     },
     {
       "id": "SCHEMA-verify-merchant-products-unique",
