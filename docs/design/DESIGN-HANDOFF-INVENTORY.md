@@ -388,6 +388,37 @@ The designs show three items (Productos · Órdenes · Comerciantes). Code has s
 
 ---
 
+## 6. Errata — internal contradictions in the handoff bundle
+
+Added 2026-08-21 (`CHORE-handoff-doc-corrections`, design inventory Q13).
+
+**These corrections live here, in the tracked inventory, rather than in the
+bundle they describe.** `design_handoff_lablld_dashboard/` is gitignored and
+never committed, so an edit inside it is invisible to git, to CI and to anyone
+who did not receive the same zip. Correcting the bundle in place would produce
+two divergent copies and no way to tell which is current. This file is the one
+both readers actually share, so the corrections belong here.
+
+**The timing this card hoped for was missed, and that is worth stating plainly.**
+Its note said to fix the 260-vs-264px and the Inicio omission *before* the UI
+cards were built. Those cards all shipped on the consolidated review of
+2026-08-21. Every item below was resolved during the build anyway — the code was
+re-derived rather than taken from the doc — so nothing shipped wrong. The record
+is late, not the work.
+
+| # | Contradiction | Resolution |
+|---|---|---|
+| 1 | `SCREENS.md` omits **Inicio** from the merchant nav; `Configuracion Tiendas.dc.html` includes it | Inicio exists and is built. `SCREENS.md` is the omission |
+| 2 | Sidebar width is **260px** in the docs and **264px** in the prototype | The prototype won, per the standing rule that it decides spacing and feel |
+| 3 | `reference/` is described as a catalogue/PDP spec but **is an order-flow diagram** | It is an order-flow diagram, and the **only** doc in the bundle naming Wompi — which makes it more load-bearing than its description suggests |
+| 4 | `Configuracion Tiendas.dc.html` has **no `SCREENS.md` section and no build step** | Built as `UI-settings-panel` from the prototype alone |
+| 5 | The logo asset is misspelled **`labdll-logo.png`** | The misspelling is in the bundle's filename. Nothing in the app references it; the app ships its own `Logo` component |
+
+None of these needs an Adam ruling. They are transcription errors in a handoff,
+recorded so the next person reading the bundle does not re-derive them.
+
+---
+
 ## Appendix — verification
 
 Read in full: all 5 markdown documents, all 10 `.dc.html` prototypes, all 3 `.js` runtime files, and both pages of `reference/flujo-ordenes.pdf`. Image assets inventoried by filename and size only. Code claims in §2 and §4 were checked against the working tree at `4c2deae`; file and line references are to that commit. No network calls, no build, no code changes.
