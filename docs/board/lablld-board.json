@@ -923,16 +923,20 @@
     {
       "id": "CHORE-untrack-claude-settings",
       "title": ".claude/settings.local.json, a personal editor settings file, is committed",
-      "lane": "loose_ends",
+      "lane": "shipped",
       "home_lane": "loose_ends",
-      "status": "todo",
+      "status": "shipped",
       "priority": "low",
       "owner_terminal": "unassigned",
       "gate": "green_self_merge",
       "blocked_on": null,
-      "last_checkpoint": "2026-08-20",
-      "evidence": null,
-      "notes": "P3 · Source: audit §8.9. ADDED-BY-SWEEP."
+      "last_checkpoint": "2026-08-21",
+      "evidence": {
+        "kind": "pr",
+        "ref": "#44",
+        "at": "2026-08-21"
+      },
+      "notes": "P3 · Source: audit §8.9. ADDED-BY-SWEEP. SHIPPED 2026-08-21 in PR #44, and half of it turned out to be already done — which is why it was checked rather than assumed. .claude/settings.local.json is NOT tracked; git ls-files returns nothing for it. But it was not in .gitignore either, so the file sat on disk with nothing stopping it being committed again. Untracking without ignoring is a fix that undoes itself the first time someone runs git add -A. The ignore entry is added, and .claude/settings.json — the SHARED file, if one is ever created — is deliberately NOT ignored."
     },
     {
       "id": "CHORE-handoff-doc-corrections",
@@ -1358,16 +1362,20 @@
     {
       "id": "UI-label-pdf-thumbnails",
       "title": "A PDF label renders as a broken thumbnail on /labels and /admin/labels: both surfaces put the signed URL straight into an <img> / next/image",
-      "lane": "loose_ends",
+      "lane": "shipped",
       "home_lane": "loose_ends",
-      "status": "todo",
+      "status": "shipped",
       "priority": "low",
       "owner_terminal": "pink",
       "gate": "green_self_merge",
       "blocked_on": null,
       "last_checkpoint": "2026-08-21",
-      "evidence": null,
-      "notes": "P3 · Found 2026-08-21 while shipping INFRA-labels-file-limits. PDF has been an accepted label format since before W1 and the create-flow uploader always took one, so this is pre-existing rather than newly introduced — but INFRA-labels-file-limits made PDFs selectable on /labels too, which widens it from one entry point to both. WHAT BREAKS: app/(merchant)/labels/page.tsx and app/admin/labels/page.tsx both render every label through an image element, so a PDF shows the browser’s broken-image glyph. The link around it still opens the file correctly, so the file is fine and only the preview is wrong. Both uploaders already handle this at upload time (a PDF shows a document chip instead of a broken img); the two LISTING surfaces do not. FIX SHAPE: the same treatment, keyed on the stored URL’s extension. Not urgent — no merchant has uploaded a PDF label yet — which is why it is a loose end rather than queued."
+      "evidence": {
+        "kind": "pr",
+        "ref": "#44",
+        "at": "2026-08-21"
+      },
+      "notes": "P3 · Found 2026-08-21 while shipping INFRA-labels-file-limits. PDF has been an accepted label format since before W1 and the create-flow uploader always took one, so this is pre-existing rather than newly introduced — but INFRA-labels-file-limits made PDFs selectable on /labels too, which widens it from one entry point to both. WHAT BREAKS: app/(merchant)/labels/page.tsx and app/admin/labels/page.tsx both render every label through an image element, so a PDF shows the browser’s broken-image glyph. The link around it still opens the file correctly, so the file is fine and only the preview is wrong. Both uploaders already handle this at upload time (a PDF shows a document chip instead of a broken img); the two LISTING surfaces do not. FIX SHAPE: the same treatment, keyed on the stored URL’s extension. Not urgent — no merchant has uploaded a PDF label yet — which is why it is a loose end rather than queued. SHIPPED 2026-08-21 in PR #44. Non-visual in the board’s sense — it changes what a broken image becomes, not any layout — so it ships on merge. THE CARD UNDERSTATED IT: it named /labels and /admin/labels, and re-deriving found FOUR surfaces. The admin ORDER ROWS and the ORDER DETAIL item list carry label thumbnails too, both added in W3, and both put the signed URL straight into an img. The admin lightbox handled PDFs at full size while the thumbnail that opened it did not. components/shared/label-thumb.tsx is one component for all four, plus the empty state, so the next surface that shows a label gets the behaviour by using it rather than by remembering to. NEGATIVE ARM on isPdfLabel, seven inputs: a public .pdf, a SIGNED .pdf with a token query, an uppercase .PDF and — the one that matters — a .png whose QUERY STRING contains \".pdf\" all classify correctly, as do null and empty string. Extension sniffing that reads the query string would have turned an ordinary image into a PDF chip."
     },
     {
       "id": "INFRA-supabase-recovery-config",

@@ -3,6 +3,7 @@ import { LabelLightbox } from './label-lightbox'
 import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from '@/lib/order-status'
 import { formatCOP, formatDate } from '@/lib/utils'
 import type { Order } from '@/types'
+import { LabelThumb } from '@/components/shared/label-thumb'
 
 export type AdminOrderRow = Order & {
   merchant: { full_name: string } | null
@@ -52,8 +53,7 @@ export function AdminOrdersTable({ rows, labelUrls, filtered }: Props) {
                       <LabelLightbox key={i.id} url={labelUrls[i.id] as string}
                         alt={i.product_name ?? 'Etiqueta'}
                         className="h-[62px] w-[46px] shrink-0 overflow-hidden rounded-[7px] border border-black/[.08] bg-[#F5F5F7] transition-opacity hover:opacity-80">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={labelUrls[i.id] as string} alt="" className="h-full w-full object-contain" />
+                        <LabelThumb url={labelUrls[i.id]} alt="" className="h-full w-full" />
                       </LabelLightbox>
                     ))}
                     {items.length > 3 && (

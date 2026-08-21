@@ -49,3 +49,9 @@ docs/board/*.rendered.html
 
 # local design bundle — handoff assets kept on disk only, not part of the app
 design_handoff_lablld_dashboard/
+
+# Personal editor settings. Already untracked, but nothing stopped it coming
+# back — which is the half of CHORE-untrack-claude-settings that had not been
+# done. .claude/settings.json (shared, if it ever exists) is deliberately not
+# ignored.
+.claude/settings.local.json
