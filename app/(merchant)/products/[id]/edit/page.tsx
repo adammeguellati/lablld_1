@@ -4,6 +4,7 @@ import { ArrowLeft } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { ProductEditInfoForm } from '@/components/merchant/product-edit-info-form'
+import { ProductDangerZone } from '@/components/merchant/product-danger-zone'
 import type { MerchantProduct } from '@/types'
 
 interface Props { params: Promise<{ id: string }> }
@@ -18,7 +19,7 @@ export default async function EditProductPage({ params }: Props) {
   const db = createAdminClient()
   const [productRes, mpRes] = await Promise.all([
     db.from('products').select('id, name').eq('id', id).single(),
-    db.from('merchant_products').select('*').eq('product_id', id).eq('merchant_id', user.id).maybeSingle(),
+    db.from('merchant_products').select('*').eq('product_id', id).eq('merchant_id', user.id).is('deleted_at', null).maybeSingle(),
   ])
 
   if (!productRes.data) notFound()
@@ -39,6 +40,11 @@ export default async function EditProductPage({ params }: Props) {
         productId={id}
         defaultName={mp.custom_name ?? ''}
         defaultPrice={mp.retail_price ?? 0}
+      />
+      <ProductDangerZone
+        merchantProductId={mp.id}
+        productName={mp.custom_name ?? productRes.data.name}
+        hasShopifyListing={Boolean(mp.shopify_product_id)}
       />
     </div>
   )

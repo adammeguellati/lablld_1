@@ -23,6 +23,7 @@ export default async function NewOrderPage({ searchParams }: Props) {
     db.from('merchant_products')
       .select('product_id, product:products(id, name, price_cop, base_price, wholesale_price_usd)')
       .eq('merchant_id', user.id)
+      .is('deleted_at', null)
       .eq('label_status', 'approved'),
   ])
 

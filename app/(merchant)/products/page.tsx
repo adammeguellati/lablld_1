@@ -25,6 +25,7 @@ export default async function ProductsPage({ searchParams }: PageProps) {
     .from('merchant_products')
     .select('*, product:products(*)')
     .eq('merchant_id', user.id)
+    .is('deleted_at', null)
     .order('created_at', { ascending: false })
 
   let rows = (data as unknown as Row[]) ?? []

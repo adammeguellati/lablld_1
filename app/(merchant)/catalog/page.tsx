@@ -42,7 +42,7 @@ export default async function CatalogPage({ searchParams }: PageProps) {
   const [productsAll, merchantRes, myProductsRes] = await Promise.all([
     getCachedProducts(),
     db.from('merchants').select('plan').eq('id', user.id).single(),
-    db.from('merchant_products').select('product_id').eq('merchant_id', user.id),
+    db.from('merchant_products').select('product_id').eq('merchant_id', user.id).is('deleted_at', null),
   ])
 
   let products = productsAll

@@ -146,6 +146,7 @@ export interface MerchantProduct {
   shipping_tier: 'standard' | 'express'
   is_published: boolean
   is_active: boolean
+  deleted_at: string | null
   created_at: string
   updated_at: string
   product?: Product

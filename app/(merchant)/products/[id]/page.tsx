@@ -27,7 +27,7 @@ export default async function ProductPersonalizePage({ params }: Props) {
   const [productRes, planRes, mpRes, storeRes] = await Promise.all([
     db.from('products').select('id, name, wholesale_price_usd, label_dimensions, canva_template_url, theme_labels, mockup_template_id').eq('id', id).single(),
     db.from('merchants').select('plan').eq('id', user.id).single(),
-    db.from('merchant_products').select('*').eq('product_id', id).eq('merchant_id', user.id).maybeSingle(),
+    db.from('merchant_products').select('*').eq('product_id', id).eq('merchant_id', user.id).is('deleted_at', null).maybeSingle(),
     db.from('shopify_stores').select('shop_domain').eq('merchant_id', user.id).maybeSingle(),
   ])
 
