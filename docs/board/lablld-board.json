@@ -1140,16 +1140,16 @@
     {
       "id": "BACKLOG-label-lightbox",
       "title": "The label lightbox with 'Descargar PNG' in Admin Ordenes, plus 46x62 label thumbnails on the order rows themselves",
-      "lane": "adam_batch",
-      "home_lane": "adam_batch",
+      "lane": "in_flight",
+      "home_lane": "in_flight",
       "status": "todo",
-      "priority": "low",
+      "priority": "high",
       "owner_terminal": "adam",
       "gate": "adam_authorizes",
       "blocked_on": null,
-      "last_checkpoint": "2026-08-20",
+      "last_checkpoint": "2026-08-21",
       "evidence": null,
-      "notes": "P3 · Source: design inventory §3 item 7. The inventory's own judgement: 'For a manufacturer this is the single most operationally useful addition in the bundle' - today an admin has no way to pull the merchant's label artwork out of the order screen. WAITS ON: Adam prioritising it. Interacts with SEC-labels-bucket - once the bucket is private the lightbox and the download both need signed URLs, so build them in that order."
+      "notes": "P3 · Source: design inventory §3 item 7. The inventory's own judgement: 'For a manufacturer this is the single most operationally useful addition in the bundle' - today an admin has no way to pull the merchant's label artwork out of the order screen. WAITS ON: Adam prioritising it. Interacts with SEC-labels-bucket - once the bucket is private the lightbox and the download both need signed URLs, so build them in that order. FOLDED 2026-08-21 into UI-admin-orders for the W3 wave, on Ivan dispatch: the lightbox with Descargar PNG and the 46x62 row thumbnails are named as in-scope parts of that card rather than backlog. It stops being a BACKLOG card in practice; it stays on the board under its own id so the fold is traceable, and it ships when UI-admin-orders does."
     },
     {
       "id": "BACKLOG-realtime-orders",
@@ -1298,6 +1298,62 @@
       "last_checkpoint": "2026-08-21",
       "evidence": null,
       "notes": "P1 · Created 2026-08-21 with FEAT-password-recovery (PR #25). The code half is done and the flow is dead without these two, so the card exists rather than a sentence in a PR body. NEITHER IS A CODE CHANGE and PINK cannot make them: both live in the Supabase dashboard, which is production. ONE, the Redirect URL allowlist (Authentication → URL Configuration) must contain the callback the reset link returns to, `<NEXT_PUBLIC_APP_URL>/api/auth/callback`. Supabase refuses to redirect to an address that is not on the list, so without it every link lands on the site root with the code unspent and the merchant sees the expired-link screen. TWO, the Reset Password email template (Authentication → Email Templates) is English boilerplate out of the box. Adam ruled the flow Spanish; the two screens are Spanish and the email would be the one English artefact in the sequence. WHO SENDS IT: whatever SMTP the Supabase project is configured with, NOT Resend and not lib/email.ts — Adam ruled the recovery to run on the Supabase flow, so its mail path is Supabase’s. If the project is still on Supabase’s built-in sender it is rate-limited to a handful of messages an hour, which is fine for recovery volume but worth knowing before testing it repeatedly. HOW TO PROVE IT WORKS, once both are set: request a reset for a real merchant address, confirm the mail arrives in Spanish, follow the link, confirm it lands on /reset-password with the form and not the expired state, set a password, confirm the green banner on /login and that the new password works."
+    },
+    {
+      "id": "UI-admin-orders",
+      "title": "Redesign /admin/orders to the handoff: label thumbnails on rows, the full-size label lightbox with Descargar PNG, stat cards and filter pills with live counts, search, and the formalised three-field quote gate",
+      "lane": "in_flight",
+      "home_lane": "in_flight",
+      "status": "todo",
+      "priority": "high",
+      "owner_terminal": "pink",
+      "gate": "green_self_merge",
+      "blocked_on": null,
+      "last_checkpoint": "2026-08-21",
+      "evidence": null,
+      "notes": "P1 · Handoff: DESIGN-HANDOFF-INVENTORY.md 2.9 -> designs/Admin Ordenes.dc.html + SCREENS.md 8. First in the W3 order. THE OPERATIONALLY IMPORTANT PART, and the inventory says so outright: the PRODUCTOS Y ETIQUETAS panel with a 46x62 label thumbnail per item that opens a full-size lightbox with Descargar PNG. An admin has no way today to pull a merchant label out of the order screen, which for a manufacturer is the single most useful addition in the bundle. ALSO IN SCOPE: label thumbnails on the order rows themselves, stat cards and filter pills carrying live counts, search across id / merchant / product / recipient, the ENTREGA Y CONTACTO zebra table, and the quote gate as a hard UI gate (Enviar cotizacion disabled until shipping cost, ETA days and carrier are all filled). LISTING USABILITY from the audit scale finding rides this card: search, status filter and pagination on the orders list. Presentation-plus, no data model change. EXPECTED CUTS, to be confirmed against live code before building: the design moves the order DETAIL out of its own route and into an expanded row workspace on the list. That is a structural rebuild rather than a visual change and it would break every deep link into /admin/orders/[id], including the admin dashboard. The stored-batch fulfillment branch is wholesale and out by standing ruling. W3 is the final design wave: after it, every surface of the app carries the new visual language. ONE consolidated Ivan + Adam review covers W1 + W2 + W3 together at the end, so this card lands in_flight awaiting that single review rather than shipping on merge. STANDING EXCLUSIONS, unchanged: wholesale / \"Al por mayor\", volume pricing, plan gating, IVA and promo tiles are out, per Adam ruling 2026-08-20 (PROD-pricing-model). FOLDS IN BACKLOG-label-lightbox (inventory section 4 item 7): the lightbox with Descargar PNG and the 46x62 row thumbnails are built here, not deferred."
+    },
+    {
+      "id": "UI-admin-merchants",
+      "title": "Redesign /admin/merchants to the handoff: initials avatar, join date, derived order-count and lifetime-volume columns, a row menu with mailto contact, and the destructive actions grouped behind one confirm",
+      "lane": "in_flight",
+      "home_lane": "in_flight",
+      "status": "todo",
+      "priority": "high",
+      "owner_terminal": "pink",
+      "gate": "green_self_merge",
+      "blocked_on": null,
+      "last_checkpoint": "2026-08-21",
+      "evidence": null,
+      "notes": "P1 · Handoff: DESIGN-HANDOFF-INVENTORY.md 2.10 -> designs/Admin Comerciantes.dc.html + SCREENS.md 9. Second in the W3 order. IN SCOPE: the 38px circular initials avatar, brand name, join date, and the derived order-count and lifetime-volume columns, all computed from data that already exists — no schema change. Row menu with a two-line mailto: contact item; SPEC.md 7.5 is explicit that admin-to-merchant messaging is mailto only and there is no in-app inbox. Destructive actions grouped into a menu with a confirm, per the audit finding. The delete confirm copy is specified and materially different from a generic warning: profile, products and labels are destroyed, invoiced orders are retained. LISTING USABILITY rides this card: search, status filter and pagination. SKIPPED, and this is a dispatch instruction not a judgement call: Regalar un mes de Esencial and Extender mes gratis. They are new admin powers that spend money and need a trial_ends_at column; gated adam_authorizes. EXPECTED FACTS-VS-DESIGN CASE: the design pill vocabulary is Esencial / Gratis / Mes gratis / Pago vencido / Suspendida, and the code PlanStatus enum is active | past_due | cancelled over plans starter | plus. Pago vencido as distinct from Gratis is a distinction the enum cannot express. Facts go to the code and the copy tells the truth about what the enum holds; the vocabulary change is carded for Adam. W3 is the final design wave: after it, every surface of the app carries the new visual language. ONE consolidated Ivan + Adam review covers W1 + W2 + W3 together at the end, so this card lands in_flight awaiting that single review rather than shipping on merge. STANDING EXCLUSIONS, unchanged: wholesale / \"Al por mayor\", volume pricing, plan gating, IVA and promo tiles are out, per Adam ruling 2026-08-20 (PROD-pricing-model)."
+    },
+    {
+      "id": "UI-admin-products",
+      "title": "Redesign /admin/products and its editor to the handoff visuals. CREATED ON A SCOPE CORRECTION: this screen HAS a design, contrary to the W3 dispatch",
+      "lane": "in_flight",
+      "home_lane": "in_flight",
+      "status": "todo",
+      "priority": "high",
+      "owner_terminal": "pink",
+      "gate": "green_self_merge",
+      "blocked_on": null,
+      "last_checkpoint": "2026-08-21",
+      "evidence": null,
+      "notes": "P1 · Handoff: DESIGN-HANDOFF-INVENTORY.md 2.8 -> designs/Admin Productos.dc.html (687 lines) + SCREENS.md 7. Third in the W3 order. SCOPE CORRECTION, recorded loudly because the dispatch says otherwise. Ivan W3 dispatch of 2026-08-21 lists admin products among the surfaces with NO design coverage, and instructs restyle-only for those. The inventory disagrees: section 2.8 maps /admin/products, /admin/products/new and /admin/products/[id] onto a 687-line design file. The dispatch ALSO opens with \"SCOPE DERIVATION FIRST: re-read the inventory admin coverage\", which is the authorizing message telling me its own split is provisional — so this is corrected and continued rather than halted on. THE CORRECTION CHANGES LESS THAN IT SOUNDS, which is the honest way to read it: almost every ADDITION the design makes here is already out by a standing ruling or needs schema the code lacks. Volume-discount pricing and the derived POR MAYOR column are wholesale pricing, out by Adam ruling 2026-08-20. The Inspirate gallery needs a products.inspiration array. The Disponibilidad split into visibility x badge needs archive / agotado / proximamente states the schema has no room for. Folding the three structured array editors into four plain textareas would drop the Supplement Facts panel, which for a supplements manufacturer is a labelling-compliance artifact, and inventory Q7 leaves it unresolved. The Canva templates card replaces theme-labels-editor.tsx wholesale. SO THE BUILDABLE CORE IS THE VISUALS PLUS LISTING USABILITY, which is what the dispatch asked for under a different name: restyle the list and the editor to the new language, and add search, category filter and pagination. Each designed addition above gets carded rather than silently dropped. W3 is the final design wave: after it, every surface of the app carries the new visual language. ONE consolidated Ivan + Adam review covers W1 + W2 + W3 together at the end, so this card lands in_flight awaiting that single review rather than shipping on merge. STANDING EXCLUSIONS, unchanged: wholesale / \"Al por mayor\", volume pricing, plan gating, IVA and promo tiles are out, per Adam ruling 2026-08-20 (PROD-pricing-model). WHERE THE DESIGNED ADDITIONS GO, so none of them is silently dropped: the volume-discount editor and the derived POR MAYOR column belong to BACKLOG-volume-pricing; the four upload slots belong to BACKLOG-inspirate-gallery; the ficha simplification is inventory Q7 and needs an Adam ruling before anything is folded; and the Disponibilidad axes, the label_dims free-text field and the Canva templates card each need schema the code does not have. Any not already carded get carded from this build."
+    },
+    {
+      "id": "UI-admin-restyle",
+      "title": "Apply the new visual language to the four admin surfaces with no design coverage: dashboard, labels, settings and orders/new. Restyle only, zero flow changes, zero invented features",
+      "lane": "in_flight",
+      "home_lane": "in_flight",
+      "status": "todo",
+      "priority": "high",
+      "owner_terminal": "pink",
+      "gate": "green_self_merge",
+      "blocked_on": null,
+      "last_checkpoint": "2026-08-21",
+      "evidence": null,
+      "notes": "P1 · No handoff mapping exists for any of these; inventory section 4 items 23-27 list them as absent. Last in the W3 order. FOUR SURFACES, NOT FIVE. The dispatch names five uncovered admin screens, but /admin/products has a design (see UI-admin-products) and /admin/shopify no longer exists — it was a four-line redirect stub deleted in W2 PR #29 with nothing linking to it. That leaves /admin/dashboard, /admin/labels, /admin/settings and /admin/orders/new. THE RULE, verbatim from the dispatch: restyle only. Apply tokens, typography, buttons, tables and empty states from the W1 components. Zero flow changes. Zero invented features. PRESENTATION DEFECTS FIXED AS PART OF THE RESTYLE, because they are visual truth-telling and not new features. VERIFIED IN LIVE CODE, not taken from the audit on trust: /admin/dashboard renders {order.status} raw, so an operator reads \"payment_failed\" and \"in_production\" instead of Spanish — and STATUS_LABELS already exists in four separate files, so the fix is one shared map rather than a fifth copy. The Merchants activos stat card links to href=\"#\", which is a dead link. /admin/orders/new is titled \"Nuevo pedido (admin)\" with a parenthetical suffix an admin does not need to be told. ALREADY FIXED, no action: the en-US date defect did not survive W1. lib/utils.ts formatDate uses Intl es-CO and anchors date-only strings to local time so they do not render a day early at UTC-5. W3 is the final design wave: after it, every surface of the app carries the new visual language. ONE consolidated Ivan + Adam review covers W1 + W2 + W3 together at the end, so this card lands in_flight awaiting that single review rather than shipping on merge. STANDING EXCLUSIONS, unchanged: wholesale / \"Al por mayor\", volume pricing, plan gating, IVA and promo tiles are out, per Adam ruling 2026-08-20 (PROD-pricing-model)."
     }
   ]
 }
