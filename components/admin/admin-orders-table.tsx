@@ -37,7 +37,7 @@ export function AdminOrdersTable({ rows, labelUrls, filtered }: Props) {
         <thead>
           <tr className="border-b border-black/[.08]">
             {['Etiquetas', 'Orden', 'Merchant', 'Cliente', 'Estado', 'Costo', 'Fecha', ''].map((h) => (
-              <th key={h} className="pb-3 text-[12px] font-medium uppercase tracking-[.04em] text-[#86868B]">{h}</th>
+              <th key={h} className="whitespace-nowrap pb-3 pr-3 text-[12px] font-medium uppercase tracking-[.04em] text-[#86868B]">{h}</th>
             ))}
           </tr>
         </thead>

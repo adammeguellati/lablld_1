@@ -51,7 +51,7 @@ export function AdminMerchantsTable({ rows, filtered }: { rows: MerchantRow[]; f
         <thead>
           <tr className="border-b border-black/[.08]">
             {['Merchant', 'Plan', 'Estado', 'Órdenes', 'Volumen', ''].map((h) => (
-              <th key={h} className="pb-3 text-[12px] font-medium uppercase tracking-[.04em] text-[#86868B]">{h}</th>
+              <th key={h} className="whitespace-nowrap pb-3 pr-3 text-[12px] font-medium uppercase tracking-[.04em] text-[#86868B]">{h}</th>
             ))}
           </tr>
         </thead>

@@ -1,4 +1,6 @@
 import { notFound, redirect } from 'next/navigation'
+import Link from 'next/link'
+import { ArrowLeft } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { ProductEditForm } from '@/components/admin/product-edit-form'
@@ -28,11 +30,16 @@ export default async function AdminEditProductPage({ params }: { params: Promise
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Editar producto</h1>
+      <Link href="/admin/products" className="mb-4 inline-flex items-center gap-1.5 text-[13.5px] text-[#86868B] transition-colors hover:text-[#1D1E20]">
+        <ArrowLeft className="h-4 w-4" /> Productos
+      </Link>
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+        <h1 className="text-[36px] font-normal leading-[1.12] tracking-[0]">{product.name}</h1>
         <DeleteProductButton productId={id} />
       </div>
-      <ProductEditForm product={product} />
+      <div className="rounded-[22px] border border-black/[.08] bg-white p-[22px] shadow-[0_1px_2px_rgba(0,0,0,.03)]">
+        <ProductEditForm product={product} />
+      </div>
     </div>
   )
 }
