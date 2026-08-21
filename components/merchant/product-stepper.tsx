@@ -10,7 +10,18 @@ import { saveMerchantProductAction, getLabelStatusAction, generateProductMockupA
 import { publishToShopifyAction } from '@/app/(merchant)/catalog/[slug]/actions'
 import type { MerchantProduct, Plan, LabelStatus, ThemeLabel } from '@/types'
 
-const STEPS = ['Producto', 'Envío', 'Etiqueta', 'Revisión', 'Mockup', 'Publicar']
+// SIX steps, not the design's four. The design has no Envío, no Revisión and no
+// Publicar; Shopify publishing is a standing keep, so the code's sequence wins
+// and only the chrome is redesigned. Each entry carries the design's step-intro
+// pattern: an eyebrow, a one-line promise, and a headline.
+const STEPS: { label: string; promise: string; headline: string }[] = [
+  { label: 'Producto', promise: 'Empecemos por lo tuyo.', headline: 'Ponle tu nombre y tu precio' },
+  { label: 'Envío', promise: 'Define cómo llega a tu cliente.', headline: 'Elige la modalidad de envío' },
+  { label: 'Etiqueta', promise: 'Tu marca sobre el envase.', headline: 'Sube o diseña tu etiqueta' },
+  { label: 'Revisión', promise: 'Revisamos que todo cumpla.', headline: 'Tu etiqueta está en revisión' },
+  { label: 'Mockup', promise: 'Míralo antes de venderlo.', headline: 'Genera tu mockup' },
+  { label: 'Publicar', promise: 'El último paso.', headline: 'Publica en tu tienda' },
+]
 
 interface Props {
   productId: string; productName: string
@@ -104,37 +115,54 @@ export function ProductStepper({ productId, productName, dims, canvaUrl, themeLa
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 p-6 md:p-10">
-      <div className="flex items-start mb-8">
-        {STEPS.map((label, i) => {
+    <div className="rounded-[22px] border border-black/[.08] bg-white p-6 shadow-[0_1px_2px_rgba(0,0,0,.03)] md:p-10">
+      <div className="mb-8 flex items-start">
+        {STEPS.map(({ label }, i) => {
           const done = maxStep > i + 1
           const active = step === i + 1
           return (
             <Fragment key={i}>
-              <button onClick={() => i + 1 < maxStep && setStep(i + 1)} disabled={i + 1 >= maxStep}
-                className={`flex flex-col items-center gap-1 min-w-0 ${i + 1 < maxStep ? 'cursor-pointer' : 'cursor-default'}`}>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 shrink-0 ${
-                  done ? 'bg-emerald-500 border-emerald-500 text-white' :
-                  active ? 'border-gray-900 text-gray-900' : 'border-gray-200 text-gray-400'
+              <button
+                onClick={() => i + 1 < maxStep && setStep(i + 1)}
+                disabled={i + 1 >= maxStep}
+                className={`flex min-w-0 flex-col items-center gap-1.5 ${i + 1 < maxStep ? 'cursor-pointer' : 'cursor-default'}`}
+              >
+                <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-[12.5px] font-medium transition-colors ${
+                  done ? 'border-[#1D1E20] bg-[#1D1E20] text-white'
+                    : active ? 'border-[#1D1E20] text-[#1D1E20]'
+                    : 'border-black/15 text-[#AEAEB2]'
                 }`}>{done ? '✓' : i + 1}</div>
-                <span className={`text-[9px] font-medium uppercase text-center leading-tight hidden sm:block ${
-                  active ? 'text-gray-900' : done ? 'text-emerald-600' : 'text-gray-400'
+                <span className={`hidden text-center text-[11px] font-medium leading-tight sm:block ${
+                  active ? 'text-[#1D1E20]' : done ? 'text-[#6E6E73]' : 'text-[#AEAEB2]'
                 }`}>{label}</span>
               </button>
-              {i < 5 && <div className={`flex-1 h-px mt-4 mx-1 ${done ? 'bg-emerald-400' : 'bg-gray-200'}`} />}
+              {i < STEPS.length - 1 && (
+                <div className={`mx-1 mt-4 h-px flex-1 ${done ? 'bg-[#1D1E20]' : 'bg-black/10'}`} />
+              )}
             </Fragment>
           )
         })}
       </div>
 
+      {/* The design's step intro: PASO n DE 6, a one-line promise, a 38px
+          headline. The denominator is STEPS.length so it can never drift from
+          the rail above it. */}
+      {STEPS[step - 1] && (
+        <div className="mb-7">
+          <p className="text-[11.5px] font-medium uppercase tracking-[.04em] text-[#86868B]">
+            Paso {step} de {STEPS.length}
+          </p>
+          <p className="mt-2 text-[15px] text-[#6E6E73]">{STEPS[step - 1].promise}</p>
+          <h2 className="mt-1 text-[38px] font-normal leading-[1.1] tracking-[-0.008em] text-pretty">
+            {STEPS[step - 1].headline}
+          </h2>
+        </div>
+      )}
+
       {error && <p className="text-sm text-red-600 mb-4 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{error}</p>}
 
       {step === 1 && (
         <div className="space-y-5 max-w-2xl">
-          <div>
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">PASO 1</p>
-            <h2 className="text-xl font-bold">Configura tu producto</h2>
-          </div>
           <div>
             <label className="block text-xs font-medium text-gray-500 mb-1.5">Nombre del producto en tu tienda</label>
             <input className={ic} value={customName} onChange={(e) => setCustomName(e.target.value)} />
@@ -169,11 +197,6 @@ export function ProductStepper({ productId, productName, dims, canvaUrl, themeLa
 
       {step === 4 && (
         <div className="space-y-5 max-w-2xl">
-          <div>
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">PASO 4</p>
-            <h2 className="text-xl font-bold">Revisión de etiqueta</h2>
-            <p className="text-sm text-gray-500 mt-0.5">Verificamos que tu etiqueta cumple todos los requisitos.</p>
-          </div>
           {labelStatus === 'pending' && (
             <div className="border border-yellow-200 bg-yellow-50 rounded-xl p-5">
               <p className="font-semibold text-sm text-yellow-800">Tu etiqueta está siendo revisada...</p>

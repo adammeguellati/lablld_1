@@ -12,6 +12,16 @@ interface LabelUploaderProps {
   onUpload: (url: string) => void
 }
 
+// Exported so the copy that STATES the limit and the check that ENFORCES it
+// cannot drift. The design says "PNG, máximo 20 MB"; this uploader accepts five
+// types up to 10 MB, and the code is the truth. Note that the OTHER uploader,
+// label-upload-form.tsx on /labels, enforces 2 MB, which is the figure the W1
+// ruling quoted. That disagreement is INFRA-labels-file-limits' to resolve; W1
+// only makes each screen state its own real limit.
+export const LABEL_MAX_MB = 10
+export const LABEL_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'pdf']
+export const LABEL_TYPES_COPY = 'JPG, PNG, WebP o PDF'
+
 export function LabelUploader({ merchantId, productId, currentUrl, onUpload }: LabelUploaderProps) {
   const [preview, setPreview] = useState(currentUrl)
   const [uploading, setUploading] = useState(false)
@@ -20,12 +30,12 @@ export function LabelUploader({ merchantId, productId, currentUrl, onUpload }: L
 
   async function handleFile(file: File) {
     const ext = file.name.split('.').pop()?.toLowerCase() ?? ''
-    if (!['jpg', 'jpeg', 'png', 'webp', 'pdf'].includes(ext)) {
-      setError('Solo se permiten archivos JPG, PNG, WebP o PDF')
+    if (!LABEL_EXTENSIONS.includes(ext)) {
+      setError(`Solo se permiten archivos ${LABEL_TYPES_COPY}`)
       return
     }
-    if (file.size > 10 * 1024 * 1024) {
-      setError('El archivo no puede superar 10MB')
+    if (file.size > LABEL_MAX_MB * 1024 * 1024) {
+      setError(`El archivo no puede superar ${LABEL_MAX_MB} MB`)
       return
     }
     setUploading(true)

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { ExternalLink, Upload } from 'lucide-react'
-import { LabelUploader } from './label-uploader'
+import { LabelUploader, LABEL_MAX_MB, LABEL_TYPES_COPY } from './label-uploader'
 import type { ThemeLabel } from '@/types'
 
 type Mode = 'plantilla' | 'propia' | 'lablld'
@@ -40,8 +40,6 @@ export function ProductStepLabel({ productName, dims, canvaUrl, themeLabels, lab
   return (
     <div className="space-y-5">
       <div>
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">PASO 3</p>
-        <h2 className="text-xl font-bold">Sube tu etiqueta</h2>
         <p className="text-sm text-gray-500 mt-0.5">
           La zona regulatoria (INVIMA, lote, fechas) viene preimpresa.{' '}
           <a href="#" className="text-emerald-600 font-semibold hover:underline">Ver guía de zonas →</a>
@@ -117,7 +115,8 @@ export function ProductStepLabel({ productName, dims, canvaUrl, themeLabels, lab
                 <ExternalLink className="w-4 h-4 text-gray-400 group-hover:text-emerald-500 transition-colors" />
               </a>
               <div className="space-y-2">
-                <p className="text-xs text-gray-500 flex items-center gap-1.5"><Upload className="w-3 h-3" /> Cuando termines, exporta como PDF o PNG y sube el archivo:</p>
+                <p className="flex items-center gap-1.5 text-xs text-gray-500"><Upload className="w-3 h-3" /> Cuando termines, exporta el archivo y súbelo aquí.</p>
+                <p className="text-xs text-[#AEAEB2]">{LABEL_TYPES_COPY} · máx. {LABEL_MAX_MB} MB</p>
                 <LabelUploader merchantId={merchantId} productId={productId} currentUrl={labelUrl} onUpload={onLabelChange} />
               </div>
             </div>
@@ -135,7 +134,8 @@ export function ProductStepLabel({ productName, dims, canvaUrl, themeLabels, lab
 
       {mode === 'propia' && (
         <div className="space-y-4">
-          <p className="text-sm text-gray-500">Sube tu archivo de etiqueta en formato PDF o PNG. La zona regulatoria (INVIMA, lote, fechas) viene preimpresa.</p>
+          <p className="text-sm text-gray-500">Sube tu archivo de etiqueta. La zona regulatoria (INVIMA, lote, fechas) viene preimpresa.</p>
+          <p className="text-xs text-[#AEAEB2]">{LABEL_TYPES_COPY} · máx. {LABEL_MAX_MB} MB</p>
           <LabelUploader merchantId={merchantId} productId={productId} currentUrl={labelUrl} onUpload={onLabelChange} />
           <div className="flex items-center justify-between pt-2">
             <button onClick={onBack} className="border border-gray-200 px-5 py-2.5 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50">← Atrás</button>

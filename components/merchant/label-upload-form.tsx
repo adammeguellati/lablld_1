@@ -10,6 +10,10 @@ import { saveLabelAction } from '@/app/(merchant)/labels/actions'
 
 interface Props { merchantId: string }
 
+// Same rule as label-uploader.tsx: the copy reads from the enforced value.
+// This one is 2 MB and that uploader is 10 MB; see the note there.
+export const BRAND_LABEL_MAX_MB = 2
+
 export function LabelUploadForm({ merchantId }: Props) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -21,7 +25,7 @@ export function LabelUploadForm({ merchantId }: Props) {
   const nameRef = useRef<HTMLInputElement>(null)
 
   async function handleFile(file: File) {
-    if (file.size > 2 * 1024 * 1024) { setError('El archivo no puede superar 2MB'); return }
+    if (file.size > BRAND_LABEL_MAX_MB * 1024 * 1024) { setError(`El archivo no puede superar ${BRAND_LABEL_MAX_MB} MB`); return }
     setUploading(true)
     setError(null)
     try {
@@ -62,7 +66,7 @@ export function LabelUploadForm({ merchantId }: Props) {
     <div className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label>Imagen (máx. 2MB)</Label>
+          <Label>Imagen (máx. {BRAND_LABEL_MAX_MB} MB)</Label>
           <div
             onClick={() => inputRef.current?.click()}
             className="h-32 border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-gray-400 transition-colors overflow-hidden"

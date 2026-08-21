@@ -21,8 +21,6 @@ export function ProductStepPublish({ customName, retailPrice, wholesalePrice, pl
   return (
     <div className="space-y-5">
       <div>
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">PASO 5</p>
-        <h2 className="text-xl font-bold">Tu producto está listo.</h2>
         <p className="text-sm text-gray-500 mt-0.5">Puedes gestionar tus pedidos manualmente o publicarlo directamente en tu tienda Shopify.</p>
       </div>
 
