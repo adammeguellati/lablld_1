@@ -60,6 +60,20 @@ export const ADMIN_EMAIL_LIST = (process.env.ADMIN_EMAILS ?? '')
   .map((e) => e.trim().toLowerCase())
   .filter(Boolean)
 
+// ADMIN_EMAILS IS THE SINGLE SOURCE OF TRUTH for the application. Ivan ruling
+// 2026-08-21.
+//
+// THE OTHER COPY: supabase/migrations/0002_rls_policies.sql creates an
+// admin_emails table, because Postgres cannot read this process's environment
+// and an RLS policy has nowhere else to look. It is a MIRROR, maintained by
+// nothing automatic. Changing this variable does not change that table.
+//
+// That is accepted rather than fixed, and the reasoning is worth keeping: RLS is
+// not the security boundary today — the app reads with the service role — so a
+// second live mechanism would add risk without adding defence. The real fix is a
+// JWT custom claim or a role column, and it is a POST-LAUNCH card
+// (CODE-admin-emails-sync).
+//
 // Exported so nothing parses ADMIN_EMAILS a second time. It was parsed twice —
 // here, and again in the Shopify request action to pick notification recipients
 // — and the two copies normalised differently, so a change to one would not

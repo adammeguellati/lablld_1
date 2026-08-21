@@ -230,8 +230,11 @@ Before that date `green_self_merge` named an authority that could not be
 exercised, because there were no required checks to be green.
 
 **What protection enforces on `main`:** pull requests are mandatory, the three
-required checks are `typecheck`, `lint` and `build`, and there is **no bypass**.
-Those three strings are job ids in `.github/workflows/ci.yml`. Renaming a job
+required checks are `typecheck`, `lint`, `build` and `e2e`, and there is **no
+bypass**. `e2e` was added to branch protection on 2026-08-21, once the job had
+reported green on a real PR — a required check is only added after it has been
+watched pass, never before.
+Those four strings are job ids in `.github/workflows/ci.yml`. Renaming a job
 renames its check and GitHub then waits forever on a check nothing reports, so
 the ids are load-bearing configuration, not labels.
 

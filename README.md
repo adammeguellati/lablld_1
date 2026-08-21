@@ -83,7 +83,7 @@ npm run lint     # eslint, --max-warnings=0 in CI
 npx tsc --noEmit # typecheck
 ```
 
-`typecheck`, `lint` and `build` are the three required checks on `main`. Their
+`typecheck`, `lint`, `build` and `e2e` are the four required checks on `main`. Their
 job ids in `.github/workflows/ci.yml` **are** the branch-protection check names,
 so renaming a job renames its check and GitHub then waits forever on a check
 nothing reports.

@@ -47,6 +47,21 @@
 -- copies of one list and nothing keeps them in sync. Changing one without the
 -- other produces a user who is an admin to the app but not to the database, or
 -- the reverse. Flagged in docs/db/SCHEMA-RECONSTRUCTION-NOTES.md.
+--
+-- RULED 2026-08-21 by Ivan, and the drift is ACCEPTED rather than fixed:
+-- ADMIN_EMAILS (lib/utils.ts) is the single source of truth for the application,
+-- and THIS TABLE IS A MIRROR maintained by nothing automatic. Keep them aligned
+-- by hand when the allowlist changes.
+--
+-- Why accepting it is not negligence: RLS is not the security boundary today,
+-- because the application reads with the service role, which bypasses every
+-- policy here. A second LIVE mechanism would add a way to be wrong without
+-- adding a way to be safe. The real fix — a JWT custom claim or a role column —
+-- is a post-launch card (CODE-admin-emails-sync).
+--
+-- To check the drift:
+--   select email from admin_emails order by 1;
+-- compared, case-insensitively, against ADMIN_EMAILS in Vercel.
 -- -----------------------------------------------------------------------------
 create table admin_emails (
   email      text primary key,
