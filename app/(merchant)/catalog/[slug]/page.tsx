@@ -49,6 +49,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
     .select('id')
     .eq('merchant_id', user.id)
     .eq('product_id', product.id)
+    .is('deleted_at', null)
     .maybeSingle()
 
   const price = merchant?.plan && product.price_cop

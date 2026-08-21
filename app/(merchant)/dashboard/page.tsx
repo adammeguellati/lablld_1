@@ -23,7 +23,7 @@ export default async function DashboardPage() {
   const [merchantRes, ordersRes, mpRes, storeRes, settingsRes, activeProductsRes] = await Promise.all([
     db.from('merchants').select('full_name, plan, plan_status').eq('id', user.id).single(),
     db.from('orders').select('id, status, order_items(unit_price, quantity)').eq('merchant_id', user.id),
-    db.from('merchant_products').select('label_url, label_status, shopify_product_id').eq('merchant_id', user.id),
+    db.from('merchant_products').select('label_url, label_status, shopify_product_id').eq('merchant_id', user.id).is('deleted_at', null),
     db.from('shopify_stores').select('id').eq('merchant_id', user.id).maybeSingle(),
     Promise.resolve(db.from('platform_settings').select('value').eq('key', 'dashboard').maybeSingle()).catch(() => ({ data: null })),
     db.from('products').select('id', { count: 'exact', head: true }).eq('is_active', true),

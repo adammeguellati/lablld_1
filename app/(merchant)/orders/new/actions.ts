@@ -23,7 +23,7 @@ export async function createManualOrderAction(
   const [merchantRes, productRes, mpRes] = await Promise.all([
     db.from('merchants').select('full_name').eq('id', user.id).single(),
     db.from('products').select('name, base_price').eq('id', input.productId).single(),
-    db.from('merchant_products').select('id, retail_price').eq('merchant_id', user.id).eq('product_id', input.productId).maybeSingle(),
+    db.from('merchant_products').select('id, retail_price').eq('merchant_id', user.id).is('deleted_at', null).eq('product_id', input.productId).maybeSingle(),
   ])
 
   const merchant = merchantRes.data

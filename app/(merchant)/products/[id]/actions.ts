@@ -23,6 +23,9 @@ export async function saveMerchantProductAction(
   const { data: merchantData } = await db.from('merchants').select('plan').eq('id', user.id).single()
   if (!merchantData?.plan) return { error: 'REQUIRES_PLAN', mpId: null }
 
+  // Deliberately does NOT filter deleted_at. The unique (merchant_id, product_id)
+  // constraint means a soft-deleted row still occupies the pair, so an insert
+  // here would fail; finding it and reviving it below is the re-add path.
   const { data: existing } = await db
     .from('merchant_products')
     .select('id, label_url, shopify_product_id, shopify_variant_id')
@@ -31,7 +34,10 @@ export async function saveMerchantProductAction(
   const mp = existing as unknown as Pick<MerchantProduct, 'id' | 'label_url' | 'shopify_product_id' | 'shopify_variant_id'> | null
 
   if (mp) {
-    const update: Record<string, unknown> = { custom_name: customName || null, retail_price: retailPrice || null, shipping_tier: shippingTier }
+    const update: Record<string, unknown> = {
+      custom_name: customName || null, retail_price: retailPrice || null, shipping_tier: shippingTier,
+      deleted_at: null, is_active: true,
+    }
 
     if (labelUrl !== null && labelUrl !== mp.label_url) {
       update.label_url = labelUrl
