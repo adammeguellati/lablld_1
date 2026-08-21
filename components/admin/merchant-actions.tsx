@@ -15,19 +15,19 @@ interface Props {
 const WARNINGS: Record<Action, (name: string) => { title: string; body: string; cta: string; danger: boolean }> = {
   toggle_active: (name) => ({
     title: 'Confirmar cambio de estado',
-    body: `¿Suspender a ${name}? No podrá acceder a la plataforma hasta que lo reactives. Su suscripción en Stripe continuará cobrándose.`,
+    body: `¿Suspender a ${name}? No podrá acceder a la plataforma hasta que lo reactives. Su suscripción sigue activa y se le seguirá cobrando.`,
     cta: 'Suspender cuenta',
     danger: false,
   }),
   cancel_subscription: (name) => ({
     title: `¿Cancelar suscripción de ${name}?`,
-    body: 'Se cancelará la suscripción en Stripe inmediatamente. El merchant perderá acceso al catálogo. Esta acción no se puede deshacer.',
+    body: 'Se cancelará la suscripción inmediatamente y se borrará su método de pago. El merchant perderá acceso al catálogo. Esta acción no se puede deshacer.',
     cta: 'Cancelar suscripción',
     danger: true,
   }),
   delete: (name) => ({
     title: `¿Eliminar cuenta de ${name}?`,
-    body: 'Se eliminará permanentemente la cuenta, todos sus datos y se cancelará su suscripción en Stripe. Esta acción es irreversible.',
+    body: 'Se eliminará permanentemente la cuenta, todos sus datos y su suscripción. Esta acción es irreversible.',
     cta: 'Eliminar permanentemente',
     danger: true,
   }),

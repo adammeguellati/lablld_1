@@ -1,6 +1,6 @@
 import { Resend } from 'resend'
 
-// Lazy singleton, mirroring getStripe() in lib/stripe.ts. The Resend
+// Lazy singleton. The Resend
 // constructor throws on a missing key, so building it at module scope took the
 // admin order page down at import time: its only importer is
 // app/admin/orders/[id]/actions.ts, and the guard below never got to run.
