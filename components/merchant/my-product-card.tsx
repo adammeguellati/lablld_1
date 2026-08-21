@@ -4,23 +4,26 @@ import { useState, useRef, useEffect, useTransition } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { MoreVertical } from 'lucide-react'
+import { formatCOP } from '@/lib/utils'
 import { toggleMerchantProductAction } from '@/app/(merchant)/products/actions'
 import type { LabelStatus, MerchantProduct, Product } from '@/types'
 
 export type MyProductRow = MerchantProduct & { product: Product | null }
 
 const CATEGORY_LABELS: Record<string, string> = {
-  supplements: 'Suplementos',
-  cosmeticos: 'Cosméticos',
-  cafe: 'Café',
-  beauty: 'Cosméticos',
-  skincare: 'Cosméticos',
+  supplements: 'Suplementos', cosmeticos: 'Cosméticos', cafe: 'Café',
+  beauty: 'Cosméticos', skincare: 'Cosméticos',
+}
+
+const CATEGORY_DOTS: Record<string, string> = {
+  supplements: '#8FC79A', cosmeticos: '#E4A0B7', cafe: '#D9B27C',
+  beauty: '#E4A0B7', skincare: '#E4A0B7',
 }
 
 const STATUS: Record<LabelStatus, { label: string; cls: string }> = {
-  pending:  { label: 'En revisión', cls: 'bg-amber-50 text-amber-600' },
-  approved: { label: 'Aprobada',    cls: 'bg-emerald-50 text-emerald-700' },
-  rejected: { label: 'Rechazada',   cls: 'bg-red-50 text-red-600' },
+  pending: { label: 'En revisión', cls: 'bg-[#FDEFE0] text-[#B4690E]' },
+  approved: { label: 'Aprobada', cls: 'bg-[#E6F6EB] text-[#16A34A]' },
+  rejected: { label: 'Rechazada', cls: 'bg-[#FBE9E6] text-[#C0303B]' },
 }
 
 export function MyProductCard({ row }: { row: MyProductRow }) {
@@ -29,6 +32,7 @@ export function MyProductCard({ row }: { row: MyProductRow }) {
   const paused = product?.is_active === false
   const isActive = row.is_active ?? true
   const status = STATUS[row.label_status]
+  const unitCost = product?.price_cop ?? null
 
   const [open, setOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
@@ -43,91 +47,109 @@ export function MyProductCard({ row }: { row: MyProductRow }) {
     return () => document.removeEventListener('mousedown', handler)
   }, [open])
 
-  function handleToggle(e: React.MouseEvent) {
-    e.preventDefault()
-    e.stopPropagation()
+  function handleToggle() {
     setOpen(false)
     startTransition(async () => { await toggleMerchantProductAction(row.id, !isActive) })
   }
 
   return (
-    <div className={`group relative bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 ${paused ? 'opacity-60 grayscale' : ''}`}>
-
+    <div className={`group relative flex flex-col ${paused ? 'opacity-60' : ''}`}>
       <Link href={`/products/${row.product_id}`} className="block">
-        <div className="relative aspect-square bg-gray-50 overflow-hidden">
+        <div className="relative aspect-[4/5] overflow-hidden rounded-[5px] bg-[#EDEDEF]">
           {image ? (
-            <Image src={image} alt={product?.name ?? ''} fill className="object-cover group-hover:scale-[1.04] transition-transform duration-300" />
+            <Image src={image} alt={product?.name ?? ''} fill className="object-cover transition-transform duration-300 group-hover:scale-[1.03]" />
           ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <span className="text-xs text-gray-300 uppercase tracking-widest">Sin imagen</span>
+            <div className="flex h-full w-full items-center justify-center">
+              <span className="text-[11px] uppercase tracking-widest text-[#AEAEB2]">Sin mockup</span>
             </div>
           )}
 
-          {paused && (
-            <div className="absolute inset-0 bg-gray-900/20 flex items-center justify-center">
-              <span className="bg-gray-900/80 text-white text-[10px] font-medium px-2.5 py-1 rounded-full">Pausado</span>
-            </div>
-          )}
-          {!paused && product?.is_new && (
-            <span className="absolute top-3 left-3 bg-gray-900 text-white text-[10px] font-medium px-2.5 py-1 rounded-full">Nuevo</span>
-          )}
-
-          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-200 flex items-end justify-center pb-4 opacity-0 group-hover:opacity-100">
-            <span className="bg-white text-gray-900 text-xs font-semibold px-4 py-1.5 rounded-full shadow-md translate-y-1 group-hover:translate-y-0 transition-transform duration-200">
-              Personalizar →
+          {/* One absolute flex row with space-between, so the category chip can
+              ellipsize and the status chip can never be pushed off or overlapped. */}
+          <div className="absolute left-3 right-3 top-3 z-[2] flex items-center justify-between gap-2">
+            <span className="flex min-w-0 items-center gap-1.5 rounded-[5px] bg-white/92 px-2 py-1 text-[11.5px] font-medium text-[#1D1E20]">
+              <span className="h-1.5 w-1.5 flex-none rounded-full" style={{ background: CATEGORY_DOTS[product?.category ?? ''] ?? '#AEAEB2' }} />
+              <span className="truncate">{CATEGORY_LABELS[product?.category ?? ''] ?? product?.category ?? '—'}</span>
+            </span>
+            <span className={`flex-none whitespace-nowrap rounded-[5px] px-2.5 py-1 text-[11.5px] font-medium ${paused ? 'bg-white/92 text-[#86868B]' : status.cls}`}>
+              {paused ? 'Pausado' : status.label}
             </span>
           </div>
         </div>
       </Link>
 
-      <div ref={menuRef} className="absolute top-3 right-3 z-10">
-        <button
-          onClick={(e) => { e.preventDefault(); setOpen((v) => !v) }}
-          className="w-7 h-7 rounded-full bg-white/90 hover:bg-white flex items-center justify-center shadow-sm transition-colors"
-        >
-          <MoreVertical className="w-3.5 h-3.5 text-gray-600" />
-        </button>
-
-        {open && (
-          <div className="absolute right-0 top-9 w-44 bg-white rounded-xl shadow-lg border border-gray-100 py-1.5 z-20">
-            <Link href={`/products/${row.product_id}`} onClick={() => setOpen(false)}
-              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-              Personalizar
-            </Link>
-            {row.label_status === 'approved' && (
-              <Link href={`/orders/new?productId=${row.product_id}`} onClick={() => setOpen(false)}
-                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-                Hacer pedido
-              </Link>
-            )}
-            {!paused && (
-              <button onClick={handleToggle} disabled={isPending}
-                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50">
-                {isPending ? '…' : isActive ? 'Pausar producto' : 'Activar producto'}
-              </button>
-            )}
-          </div>
-        )}
-      </div>
-
-      <div className="px-4 py-3">
-        <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wider mb-0.5">
-          {CATEGORY_LABELS[product?.category ?? ''] ?? product?.category ?? '—'}
-        </p>
-        <p className="text-sm font-semibold text-gray-900 truncate">
+      <div className="flex flex-1 flex-col pt-3.5">
+        <p className="text-[15px] font-medium leading-[1.38] text-[#1D1E20] text-pretty">
           {row.custom_name ?? product?.name ?? '—'}
         </p>
-        <div className="flex items-center gap-2 mt-2 flex-wrap">
-          <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${status.cls}`}>
-            {status.label}
-          </span>
-          {!isActive && (
-            <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
-              Inactivo
-            </span>
-          )}
-          {row.is_published && (
-            <span className="text-[10px] font-medium text-emerald-600">✓ Shopify</span>
+        {row.custom_name && product?.name && (
+          <p className="mt-1 text-[13px] font-medium text-[#86868B]">{product.name}</p>
+        )}
+
+        <div className="min-h-3 flex-1" />
+
+        {unitCost !== null && (
+          <div className="flex items-baseline justify-between gap-2 pt-2.5">
+            <span className="text-[12.5px] text-[#86868B]">Costo por unidad</span>
+            <span className="text-[14.5px] text-[#1D1E20]">{formatCOP(unitCost)}</span>
+          </div>
+        )}
+        {row.retail_price != null && (
+          <div className="flex items-baseline justify-between gap-2">
+            <span className="text-[12.5px] text-[#86868B]">Tu precio de venta</span>
+            <span className="text-[14.5px] font-medium text-[#1D1E20]">{formatCOP(row.retail_price)}</span>
+          </div>
+        )}
+
+        {!isActive && !paused && (
+          <p className="mt-1.5 text-[12.5px] text-[#86868B]">Inactivo en tu tienda</p>
+        )}
+
+        <div className="mt-3.5 flex items-center gap-2">
+          {row.label_status === 'approved' && !paused ? (
+            <Link
+              href={`/orders/new?productId=${row.product_id}`}
+              className="flex flex-1 items-center justify-center rounded-[11px] bg-[#1D1E20] px-3 py-2.5 text-[14px] font-medium text-white transition-colors hover:bg-[#F97316]"
+            >
+              Crear orden
+            </Link>
+          ) : null}
+          <Link
+            href={`/products/${row.product_id}`}
+            className={`flex items-center justify-center rounded-[11px] border border-black/10 px-3.5 py-2.5 text-[14px] font-medium text-[#1D1E20] transition-colors hover:border-black/25 ${row.label_status === 'approved' && !paused ? '' : 'flex-1'}`}
+          >
+            Editar
+          </Link>
+
+          {/* The pause/activate action stays. The design replaces this menu with
+              a delete, which is FEAT-merchant-product-delete and out of W1, so
+              removing the toggle would drop behaviour the design never replaced. */}
+          {!paused && (
+            <div ref={menuRef} className="relative flex-none">
+              <button
+                type="button"
+                onClick={() => setOpen((v) => !v)}
+                className="flex h-[38px] w-[38px] items-center justify-center rounded-[11px] border border-black/10 transition-colors hover:border-black/25"
+                aria-label="Más acciones"
+              >
+                <MoreVertical className="h-4 w-4 text-[#6E6E73]" />
+              </button>
+              {open && (
+                <div className="absolute bottom-[calc(100%+6px)] right-0 z-20 w-48 rounded-[14px] border border-black/10 bg-white p-[7px] shadow-[0_12px_36px_rgba(0,0,0,.14)]">
+                  <button
+                    type="button"
+                    onClick={handleToggle}
+                    disabled={isPending}
+                    className="w-full rounded-[9px] px-2.5 py-2 text-left text-[14.5px] transition-colors hover:bg-black/[.04] disabled:opacity-50"
+                  >
+                    {isPending ? '…' : isActive ? 'Pausar producto' : 'Activar producto'}
+                  </button>
+                  {row.is_published && (
+                    <p className="px-2.5 py-2 text-[13px] text-[#16A34A]">✓ Publicado en Shopify</p>
+                  )}
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>
