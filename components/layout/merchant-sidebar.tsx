@@ -62,9 +62,12 @@ export function MerchantSidebar({ merchantName, pendingOrderCount = 0 }: Props) 
               )}>
               <div className="relative shrink-0">
                 <Icon className="h-[18px] w-[18px]" />
-                {showDot && <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-emerald-500 rounded-full border border-white" />}
+                {/* Collapsed rail has no room on the right edge, so the dot stays
+                    on the icon there and moves to the edge once labels show. */}
+                {showDot && <span className="om-pulse absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-[#34C759] border border-white lg:hidden" />}
               </div>
               <span className="hidden lg:block">{label}</span>
+              {showDot && <span className="om-pulse ml-auto hidden h-2 w-2 flex-none rounded-full bg-[#34C759] lg:block" />}
             </Link>
           )
         })}

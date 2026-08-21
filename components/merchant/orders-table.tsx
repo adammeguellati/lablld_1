@@ -9,11 +9,14 @@ type FilterValue = OrderStatus | 'all' | 'pending_group'
 
 const PENDING: OrderStatus[] = ['quote_pending', 'payment_pending', 'payment_failed', 'pending', 'paid']
 
-const STATS = [
-  { label: 'Total',      color: 'text-gray-900',    fn: (os: Order[]) => os.length },
-  { label: 'Entregadas', color: 'text-emerald-600', fn: (os: Order[]) => os.filter(o => o.status === 'delivered').length },
-  { label: 'Enviadas',   color: 'text-violet-600',  fn: (os: Order[]) => os.filter(o => o.status === 'shipped').length },
-  { label: 'Pendientes', color: 'text-orange-500',  fn: (os: Order[]) => os.filter(o => (PENDING as string[]).includes(o.status)).length },
+// 2x2, reading Total / Pendientes over Enviadas / Entregadas, per SCREENS.md
+// section 6. Each is also the filter for the state it counts, so the number and
+// the control are the same object rather than a number beside a pill.
+const STATS: { label: string; color: string; filter: FilterValue; fn: (os: Order[]) => number }[] = [
+  { label: 'Total',      color: '#1D1E20', filter: 'all',           fn: (os) => os.length },
+  { label: 'Pendientes', color: '#B4690E', filter: 'pending_group', fn: (os) => os.filter(o => (PENDING as string[]).includes(o.status)).length },
+  { label: 'Enviadas',   color: '#6E56CF', filter: 'shipped',       fn: (os) => os.filter(o => o.status === 'shipped').length },
+  { label: 'Entregadas', color: '#16A34A', filter: 'delivered',     fn: (os) => os.filter(o => o.status === 'delivered').length },
 ]
 
 const FILTERS: { value: FilterValue; label: string }[] = [
@@ -26,10 +29,10 @@ const FILTERS: { value: FilterValue; label: string }[] = [
 ]
 
 const pill = (active: boolean) =>
-  `text-xs px-3.5 py-1.5 rounded-full border transition-all duration-150 ${
+  `rounded-full border px-3.5 py-1.5 text-[13.5px] font-medium transition-colors ${
     active
-      ? 'bg-gray-900 text-white border-gray-900'
-      : 'border-gray-200 text-gray-600 hover:border-gray-400 bg-white'
+      ? 'border-[#1D1E20] bg-[#1D1E20] text-white'
+      : 'border-black/10 bg-white text-[#1D1E20] hover:border-black/25'
   }`
 
 export function MerchantOrdersTable({ orders }: { orders: Order[] }) {
@@ -46,53 +49,77 @@ export function MerchantOrdersTable({ orders }: { orders: Order[] }) {
   })
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        {STATS.map(({ label, color, fn }) => (
-          <div key={label} className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">{label}</p>
-            <p className={`text-3xl font-heading font-normal tracking-[0] ${color}`}>{fn(orders)}</p>
+    <div>
+      <div className="grid grid-cols-2 gap-3.5 lg:max-w-[560px]">
+        {STATS.map(({ label, color, filter: f, fn }) => {
+          const active = filter === f
+          return (
+            <button
+              key={label}
+              type="button"
+              onClick={() => setFilter(f)}
+              className={`flex h-[112px] flex-col justify-between rounded-[14px] border bg-white p-5 text-left transition-colors ${
+                active ? 'border-[#1D1E20]' : 'border-black/[.08] hover:border-black/25'
+              }`}
+            >
+              <span className="text-[12px] text-[#86868B]">{label}</span>
+              <span className="self-end text-[40px] font-normal leading-none tracking-[-0.02em]" style={{ color }}>
+                {fn(orders)}
+              </span>
+            </button>
+          )
+        })}
+      </div>
+
+      <div className="mt-11 rounded-[22px] border border-black/[.08] bg-white p-[22px] shadow-[0_1px_2px_rgba(0,0,0,.03)]">
+        <div className="flex flex-wrap items-center gap-3 rounded-[18px] bg-[#F5F5F7] p-6">
+          <div className="relative flex-none">
+            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#86868B]" />
+            <input
+              type="text"
+              placeholder="Orden, producto, cliente..."
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              className="w-64 rounded-[11px] border border-black/10 bg-white py-2.5 pl-10 pr-8 text-[14.5px] outline-none transition-colors focus:border-black/25"
+            />
+            {q && (
+              <button
+                type="button"
+                onClick={() => setQ('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#AEAEB2] transition-colors hover:text-[#1D1E20]"
+                aria-label="Limpiar búsqueda"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
           </div>
-        ))}
-      </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {FILTERS.map(({ value, label }) => (
+              <button key={value} type="button" onClick={() => setFilter(value)} className={pill(filter === value)}>
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
 
-      <div className="flex items-center gap-3 flex-wrap">
-        <div className="relative flex-1 sm:flex-none">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-          <input
-            type="text"
-            placeholder="Orden, producto, cliente..."
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            className="pl-9 pr-8 py-2 text-sm border border-gray-200 rounded-xl bg-white w-full sm:w-64 focus:outline-none focus:border-gray-400 transition-colors"
-          />
-          {q && (
-            <button onClick={() => setQ('')}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-500">
-              <X className="w-3.5 h-3.5" />
-            </button>
-          )}
+        <div className="my-[26px] mb-3.5 flex items-baseline justify-between gap-4">
+          <span className="text-[15px] font-medium text-[#6E6E73]">
+            {filtered.length === 1 ? '1 orden' : `${filtered.length} órdenes`}
+          </span>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          {FILTERS.map(({ value, label }) => (
-            <button key={value} onClick={() => setFilter(value)} className={pill(filter === value)}>
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
 
-      {filtered.length === 0 ? (
-        <div className="py-20 text-center">
-          <p className="text-sm text-gray-400">
-            {orders.length === 0 ? 'Aún no tienes órdenes.' : 'Sin resultados para esa búsqueda.'}
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {filtered.map((order) => <OrderRow key={order.id} order={order} />)}
-        </div>
-      )}
+        {filtered.length === 0 ? (
+          <div className="rounded-[14px] border border-black/[.08] px-5 py-16 text-center">
+            <p className="text-[15px] font-medium text-[#1D1E20]">
+              {orders.length === 0 ? 'Aún no tienes órdenes.' : 'Sin resultados para esa búsqueda.'}
+            </p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2.5">
+            {filtered.map((order) => <OrderRow key={order.id} order={order} />)}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
