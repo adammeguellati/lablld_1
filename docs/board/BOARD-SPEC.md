@@ -262,6 +262,37 @@ Disabling a check, relaxing it, or narrowing its scope to obtain green is
 forbidden: it converts a real gate into a decorative one, which is the exact
 anti-pattern the evidence standard at the end of this file exists to prevent.
 
+## Design versus code
+
+Set by Ivan on 2026-08-20, while dispatching the W1 UI wave, after three cards in
+a row stalled on the same shape of disagreement. It exists so the fourth does not.
+
+A design handoff and a working codebase will disagree. **The kind of
+disagreement decides who wins, and there are three kinds:**
+
+| They disagree about | Winner | What to do |
+|---|---|---|
+| **Facts** — limits, counts, categories, quotas, prices | **The code** | Build to the code, and **fix the copy to tell the truth** |
+| **Intent** — features, flows, whole screens | **Neither, yet** | Card it, gated `adam_authorizes` |
+| **Visuals** — layout, type, colour, spacing, motion | **The design** | Build it |
+
+**Never ship copy that promises what the code rejects.** A design that says
+"máximo 20 MB" over an uploader that refuses anything above 2 MB is not a visual
+difference; it is a lie the user discovers by failing. The fix is the copy, not
+the limit, unless a product ruling changes the limit — and then the copy follows
+the constant, in one place.
+
+The reason facts go to the code rather than to the owner is throughput: a
+factual mismatch has a knowable right answer that anyone can check by reading the
+code, so routing it through a person adds latency and no information. Intent has
+no knowable right answer, which is exactly why it needs the owner. Sorting by
+that test is what keeps the queue moving without quietly deciding product
+questions.
+
+**Copy that states a limit should read from the constant that enforces it**
+wherever practical, so a future ruling changes one value rather than a value and
+a sentence that drift apart.
+
 ## The portal (what the artifact is)
 
 The artifact is a working surface, not a picture of one. It renders from the JSON
