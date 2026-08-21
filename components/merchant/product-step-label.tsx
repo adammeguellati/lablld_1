@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import { ExternalLink, Upload } from 'lucide-react'
-import { LabelUploader, LABEL_MAX_MB, LABEL_TYPES_COPY } from './label-uploader'
+import { LabelUploader } from './label-uploader'
+import { LABEL_MAX_MB, LABEL_TYPES_COPY } from '@/lib/limits'
 import type { ThemeLabel } from '@/types'
 
 type Mode = 'plantilla' | 'propia' | 'lablld'

@@ -563,16 +563,20 @@
     {
       "id": "INFRA-labels-file-limits",
       "title": "Neither bucket has a size or MIME limit; enforcement is client-side only and the two label uploaders disagree (2 MB vs 10 MB) while the design copy promises 20 MB. Set bucket-level limits and reconcile with design Q8",
-      "lane": "in_flight",
+      "lane": "shipped",
       "home_lane": "in_flight",
-      "status": "todo",
+      "status": "shipped",
       "priority": "medium",
       "owner_terminal": "unassigned",
       "gate": "green_self_merge",
       "blocked_on": null,
       "last_checkpoint": "2026-08-21",
-      "evidence": null,
-      "notes": "P2 · Source: schema notes C16/D7; design inventory Q8. The number to enforce is an Adam answer (Q8); the bucket-level limit itself is not. DEPENDENCY RECORDED 2026-08-20 from UI-product-create-flow: that card now renders 'PNG, máx. 2 MB', matching the client-side limit in label-upload-form.tsx, because the design's 20 MB copy promised what the code rejects. If this card changes the enforced limit, that copy must follow it in the same PR. CORRECTED 2026-08-20 from UI-product-create-flow, replacing the note added earlier the same day: the create flow does NOT render the 2 MB uploader. Step 3 uses label-uploader.tsx at 10 MB accepting jpg/jpeg/png/webp/pdf; the 2 MB figure is label-upload-form.tsx on /labels. Neither limit was changed by W1. Both now derive their COPY from the constant that enforces them, so this card only has to decide the numbers, not hunt for the sentences that quote them. RULED 2026-08-21 by Adam, answering design Q8: 10 MB everywhere, file types png / jpg / webp / pdf. BUILDABLE and first in the W2 run order. THE WORK: raise the /labels uploader (BRAND_LABEL_MAX_MB, today 2) to 10 so both uploaders agree; the create-flow uploader (LABEL_MAX_MB) is already 10. Both displayed limits stay derived from their constant per the copy-reads-the-constant doctrine, never a literal. Author a bucket-limit migration (10 MB size limit plus the MIME allowlist) as a FILE for Ivan to apply in the dashboard; PINK never applies it. Gate changed from its authored value by the authorizing-message exception (BOARD-SPEC.md, 2026-08-21): Ivan’s W2 dispatch of 2026-08-21 both carries the ruling and grants self-merge on green throughout, so the message wins over the stale JSON. Migrations remain authored-not-applied."
+      "evidence": {
+        "kind": "pr",
+        "ref": "#24",
+        "at": "2026-08-21"
+      },
+      "notes": "P2 · Source: schema notes C16/D7; design inventory Q8. The number to enforce is an Adam answer (Q8); the bucket-level limit itself is not. DEPENDENCY RECORDED 2026-08-20 from UI-product-create-flow: that card now renders 'PNG, máx. 2 MB', matching the client-side limit in label-upload-form.tsx, because the design's 20 MB copy promised what the code rejects. If this card changes the enforced limit, that copy must follow it in the same PR. CORRECTED 2026-08-20 from UI-product-create-flow, replacing the note added earlier the same day: the create flow does NOT render the 2 MB uploader. Step 3 uses label-uploader.tsx at 10 MB accepting jpg/jpeg/png/webp/pdf; the 2 MB figure is label-upload-form.tsx on /labels. Neither limit was changed by W1. Both now derive their COPY from the constant that enforces them, so this card only has to decide the numbers, not hunt for the sentences that quote them. RULED 2026-08-21 by Adam, answering design Q8: 10 MB everywhere, file types png / jpg / webp / pdf. BUILDABLE and first in the W2 run order. THE WORK: raise the /labels uploader (BRAND_LABEL_MAX_MB, today 2) to 10 so both uploaders agree; the create-flow uploader (LABEL_MAX_MB) is already 10. Both displayed limits stay derived from their constant per the copy-reads-the-constant doctrine, never a literal. Author a bucket-limit migration (10 MB size limit plus the MIME allowlist) as a FILE for Ivan to apply in the dashboard; PINK never applies it. Gate changed from its authored value by the authorizing-message exception (BOARD-SPEC.md, 2026-08-21): Ivan’s W2 dispatch of 2026-08-21 both carries the ruling and grants self-merge on green throughout, so the message wins over the stale JSON. Migrations remain authored-not-applied. SHIPPED 2026-08-21 in PR #24. WHAT LANDED: LABEL_MAX_MB (10), LABEL_EXTENSIONS, LABEL_MIME_TYPES, LABEL_ACCEPT_ATTR and LABEL_TYPES_COPY moved into lib/limits.ts as one set, and both uploaders now read them — the /labels form went from 2 MB to 10 and from no type check at all to the same check the create flow already had, and both file pickers went from accept=\"image/*\" (which could not offer a PDF, an accepted format) to the real MIME list. The step-4 verification checklist said \"Tamaño < 15MB\", a third number belonging to neither uploader; it now reads the constant. Bucket migration 0004_labels_bucket_limits.sql is AUTHORED AND NOT APPLIED, waiting on Ivan: it sets file_size_limit and allowed_mime_types on the labels bucket, and carries its own verification query and a by-hand negative arm. Until it is applied the ONLY size enforcement is client-side, which is a message and not a boundary. VERIFIED in an isolation harness: both screens read \"JPG, PNG, WebP o PDF · máx. 10 MB\"; an 11 MB file and a .txt were each rejected on both uploaders with the derived Spanish message; and a 9 MB PNG, which the old 2 MB limit would have refused, passed the size check on /labels. CUT AND CARDED: a PDF label still renders as a broken thumbnail on /labels and /admin/labels — pre-existing, since the create flow always accepted PDFs, but this card widens the surface. See UI-label-pdf-thumbnails."
     },
     {
       "id": "INFRA-node-version-pin",
@@ -1246,6 +1250,20 @@
       "last_checkpoint": "2026-08-21",
       "evidence": null,
       "notes": "P2 · REPORTED 2026-08-21 by Ivan from the deployed instance: \"create-flow stepper displays STEP 1 OF 6 on every step, observed on steps 5 and 6.\" INVESTIGATED THE SAME DAY AND NOT REPRODUCED. What the code actually does: components/merchant/product-stepper.tsx:153 renders `Paso {step} de {STEPS.length}`. Both halves are derived — the numerator is the component’s own step state, the denominator is the length of the STEPS array that also builds the rail above it — and there is no literal step number anywhere in the file, so there is no line that could hold a stale 1. HOW IT WAS CHECKED: a throwaway isolation harness route mounted the real ProductStepper with stub props at each initialStep; SSR emitted \"Paso 1 de 6\", \"Paso 3 de 6\", \"Paso 5 de 6\" and \"Paso 6 de 6\" correctly. Then in the browser, mounted at step 4 and driven forward through the two client transitions that reach the reported steps — Continuar → (goTo 5) and Omitir por ahora → (goTo 6) — the eyebrow read PASO 4 DE 6, then PASO 5 DE 6, then PASO 6 DE 6, and the rail advanced with it. The harness cannot drive the two transitions that call a server action first (step 1 → 2 and the label save at step 3 → 5), but neither action revalidates or redirects, so neither can reset client state. BLOCKED ON IVAN, deliberately: fabricating a fix for a defect that does not reproduce would change working code on a guess. WHAT WOULD UNBLOCK IT: a screenshot of the wrong counter, plus which step the screen was actually on and how it was reached (clicked through in one session, or landed on after a reload). A reload is the untested path — it re-enters through getInitialStep() in app/(merchant)/products/[id]/page.tsx, which returns 1 only when the merchant has no merchant_products row at all."
+    },
+    {
+      "id": "UI-label-pdf-thumbnails",
+      "title": "A PDF label renders as a broken thumbnail on /labels and /admin/labels: both surfaces put the signed URL straight into an <img> / next/image",
+      "lane": "loose_ends",
+      "home_lane": "loose_ends",
+      "status": "todo",
+      "priority": "low",
+      "owner_terminal": "pink",
+      "gate": "green_self_merge",
+      "blocked_on": null,
+      "last_checkpoint": "2026-08-21",
+      "evidence": null,
+      "notes": "P3 · Found 2026-08-21 while shipping INFRA-labels-file-limits. PDF has been an accepted label format since before W1 and the create-flow uploader always took one, so this is pre-existing rather than newly introduced — but INFRA-labels-file-limits made PDFs selectable on /labels too, which widens it from one entry point to both. WHAT BREAKS: app/(merchant)/labels/page.tsx and app/admin/labels/page.tsx both render every label through an image element, so a PDF shows the browser’s broken-image glyph. The link around it still opens the file correctly, so the file is fine and only the preview is wrong. Both uploaders already handle this at upload time (a PDF shows a document chip instead of a broken img); the two LISTING surfaces do not. FIX SHAPE: the same treatment, keyed on the stored URL’s extension. Not urgent — no merchant has uploaded a PDF label yet — which is why it is a loose end rather than queued."
     }
   ]
 }

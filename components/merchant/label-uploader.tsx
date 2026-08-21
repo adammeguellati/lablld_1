@@ -2,8 +2,9 @@
 
 import { useState, useRef } from 'react'
 import { Button } from '@/components/ui/button'
-import { Upload } from 'lucide-react'
+import { Upload, FileText } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { LABEL_MAX_MB, LABEL_EXTENSIONS, LABEL_TYPES_COPY, LABEL_ACCEPT_ATTR } from '@/lib/limits'
 
 interface LabelUploaderProps {
   merchantId: string
@@ -12,25 +13,23 @@ interface LabelUploaderProps {
   onUpload: (url: string) => void
 }
 
-// Exported so the copy that STATES the limit and the check that ENFORCES it
-// cannot drift. The design says "PNG, máximo 20 MB"; this uploader accepts five
-// types up to 10 MB, and the code is the truth. Note that the OTHER uploader,
-// label-upload-form.tsx on /labels, enforces 2 MB, which is the figure the W1
-// ruling quoted. That disagreement is INFRA-labels-file-limits' to resolve; W1
-// only makes each screen state its own real limit.
-export const LABEL_MAX_MB = 10
-export const LABEL_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'pdf']
-export const LABEL_TYPES_COPY = 'JPG, PNG, WebP o PDF'
+// The limit, the accepted types and the copy that states them all live in
+// lib/limits.ts now. They used to be declared here, which was fine while this
+// uploader was the only one that agreed with itself — but the /labels uploader
+// enforced a different number, and Adam's ruling of 2026-08-21 made the two
+// agree at 10 MB. One value, one place.
 
 export function LabelUploader({ merchantId, productId, currentUrl, onUpload }: LabelUploaderProps) {
   const [preview, setPreview] = useState(currentUrl)
+  // Same reason as label-upload-form.tsx: PDF is accepted and is not an image.
+  const [previewIsPdf, setPreviewIsPdf] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   async function handleFile(file: File) {
     const ext = file.name.split('.').pop()?.toLowerCase() ?? ''
-    if (!LABEL_EXTENSIONS.includes(ext)) {
+    if (!(LABEL_EXTENSIONS as readonly string[]).includes(ext)) {
       setError(`Solo se permiten archivos ${LABEL_TYPES_COPY}`)
       return
     }
@@ -51,6 +50,7 @@ export function LabelUploader({ merchantId, productId, currentUrl, onUpload }: L
         data: { publicUrl },
       } = supabase.storage.from('labels').getPublicUrl(data.path)
       setPreview(publicUrl)
+      setPreviewIsPdf(ext === 'pdf')
       onUpload(publicUrl)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al subir archivo')
@@ -61,7 +61,12 @@ export function LabelUploader({ merchantId, productId, currentUrl, onUpload }: L
 
   return (
     <div className="space-y-3">
-      {preview ? (
+      {preview && previewIsPdf ? (
+        <div className="h-24 border rounded-md flex flex-col items-center justify-center gap-1.5 px-3">
+          <FileText className="h-5 w-5 text-gray-400" />
+          <p className="text-xs text-muted-foreground">PDF cargado</p>
+        </div>
+      ) : preview ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={preview} alt="Etiqueta" className="h-24 object-contain border rounded-md p-2" />
       ) : (
@@ -73,7 +78,7 @@ export function LabelUploader({ merchantId, productId, currentUrl, onUpload }: L
       <input
         ref={inputRef}
         type="file"
-        accept="image/*"
+        accept={LABEL_ACCEPT_ATTR}
         className="hidden"
         onChange={(e) => {
           const file = e.target.files?.[0]
