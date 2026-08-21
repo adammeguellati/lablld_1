@@ -55,11 +55,15 @@ export function isProductNew(createdAt: string): boolean {
 // filter(Boolean) is load-bearing, not tidying. Without it an unset
 // ADMIN_EMAILS yields [''], and a user whose email is null or undefined
 // matches it, so the allowlist grants admin instead of denying it.
-const ADMIN_EMAIL_LIST = (process.env.ADMIN_EMAILS ?? '')
+export const ADMIN_EMAIL_LIST = (process.env.ADMIN_EMAILS ?? '')
   .split(',')
   .map((e) => e.trim().toLowerCase())
   .filter(Boolean)
 
+// Exported so nothing parses ADMIN_EMAILS a second time. It was parsed twice —
+// here, and again in the Shopify request action to pick notification recipients
+// — and the two copies normalised differently, so a change to one would not
+// have been visibly a change to the other.
 export function isAdmin(email: string | null | undefined): boolean {
   const normalised = (email ?? '').trim().toLowerCase()
   return normalised !== '' && ADMIN_EMAIL_LIST.includes(normalised)

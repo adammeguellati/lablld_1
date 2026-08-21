@@ -1,0 +1,60 @@
+-- =============================================================================
+-- 0007 — fulfillment_fee_cop becomes integer, like every other *_cop column
+--
+-- Card: SCHEMA-money-column-types. Source: schema notes C5, D6.
+--
+-- THE INCONSISTENCY, AND WHY THE CODE DECIDES IT
+--
+-- Five money columns are named *_cop. Four are `integer` and their Zod
+-- declarations carry .int(). One — orders.fulfillment_fee_cop — is
+-- numeric(12,2), and its Zod was a bare z.number() with no .int().
+--
+-- COP has no minor unit in everyday use: prices are whole pesos. Four of the
+-- five declarations already said so. This is a factual disagreement with a
+-- knowable right answer, so the code decides it rather than the owner, and the
+-- odd one out is the one that changes. The Zod half shipped with this file.
+--
+-- RUN THE PRE-CHECK FIRST. This is not optional:
+--
+--   select count(*) as fractional
+--   from orders
+--   where fulfillment_fee_cop is not null
+--     and fulfillment_fee_cop <> round(fulfillment_fee_cop);
+--
+-- Expect 0. If it is NOT 0, STOP and do not apply this file: some rows carry
+-- centavos, which means either a real charge was recorded in a different unit or
+-- something wrote a computed value. Rounding those silently would change money
+-- that has already moved. Bring the count back to the board instead.
+--
+-- RELATED, AND DELIBERATELY NOT DECIDED HERE: CHORE-verify-wompi-price-unit asks
+-- whether lib/wompi.ts is right to multiply COP by 100 for amount_in_cents. That
+-- is the same money-representation question at the API boundary, and it is
+-- answered against a sandbox transaction, not by reading SQL. Applying this file
+-- does not prejudge it — this is about what the COLUMN holds, not what Wompi
+-- receives.
+--
+-- REVERSIBLE: alter back to numeric(12,2). Whole numbers survive the round trip.
+--
+-- NOT APPLIED BY THE EXECUTOR. Ivan applies this in the Supabase dashboard.
+-- =============================================================================
+
+alter table orders
+  alter column fulfillment_fee_cop type integer
+  using round(fulfillment_fee_cop)::integer;
+
+-- -----------------------------------------------------------------------------
+-- Verification, after applying. Expect exactly one row: integer.
+--
+--   select data_type
+--   from information_schema.columns
+--   where table_name = 'orders' and column_name = 'fulfillment_fee_cop';
+--
+-- And confirm the five agree, which was the point:
+--
+--   select table_name, column_name, data_type
+--   from information_schema.columns
+--   where column_name like '%\_cop' escape '\'
+--   order by data_type, table_name, column_name;
+--
+-- Expect every row to read integer.
+-- -----------------------------------------------------------------------------

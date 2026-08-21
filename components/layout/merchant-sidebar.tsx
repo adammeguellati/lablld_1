@@ -18,8 +18,16 @@ const navItems = [
   { href: '/settings',  label: 'Configuración',    icon: Settings },
 ]
 
-const WA_URL = 'https://api.whatsapp.com/send/?phone=%2B573219482805&text=Hola%2C+tengo+una+pregunta+sobre+LABLLD+%F0%9F%8F%B7&type=phone_number&app_absent=0'
-const HELP_URL = 'https://lablld.com/centro-de-ayuda'
+// Configuration, not code. The number was baked into every merchant page, so
+// changing it meant a deploy. The literals stay as fallbacks so an unset env var
+// degrades to today's behaviour rather than to a dead link.
+//
+// NEXT_PUBLIC_ because this is a client component: the value reaches the browser
+// either way, and a support number is not a secret.
+const SUPPORT_PHONE = process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP ?? '+573219482805'
+const WA_TEXT = 'Hola, tengo una pregunta sobre LABLLD 🏷'
+const WA_URL = `https://api.whatsapp.com/send/?phone=${encodeURIComponent(SUPPORT_PHONE)}&text=${encodeURIComponent(WA_TEXT)}&type=phone_number&app_absent=0`
+const HELP_URL = process.env.NEXT_PUBLIC_HELP_CENTER_URL ?? 'https://lablld.com/centro-de-ayuda'
 
 interface Props { merchantName: string; pendingOrderCount?: number }
 

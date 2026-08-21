@@ -378,9 +378,9 @@
       "owner_terminal": "unassigned",
       "gate": "ivan_merge",
       "blocked_on": null,
-      "last_checkpoint": "2026-08-20",
+      "last_checkpoint": "2026-08-21",
       "evidence": null,
-      "notes": "P2 · Source: schema notes C10."
+      "notes": "P2 · Source: schema notes C10. CODE HALF DONE 2026-08-21 in PR #43; the card STAYS OPEN because the half that remains is a decision, not an edit. WHAT WAS FIXED: ADMIN_EMAILS was parsed TWICE — once in lib/utils.ts for isAdmin, and again in the Shopify request action to pick notification recipients — and the two copies normalised DIFFERENTLY, the second not lowercasing. One exported ADMIN_EMAIL_LIST now, so a change to the list is visibly a change everywhere it is used. WHAT REMAINS, and why it cannot be built away: admin_emails is a legitimate RLS SUPPORT TABLE, not a stray duplicate. Postgres cannot read the application’s environment, so a policy has nowhere else to look. Dropping it would remove the database’s only notion of who is an admin. The duplication is inherent to the design, so the card’s \"replace the mechanism or add a sync\" is a real fork: a JWT claim or a role column would remove the second copy; a sync keeps both and accepts the drift risk. UNTIL IT IS DECIDED, the drift is checkable rather than invisible. Compare `select email from admin_emails order by 1` against the ADMIN_EMAILS value in Vercel. They must match case-insensitively. A mismatch produces a user who is an admin to the app but not to the database, or the reverse."
     },
     {
       "id": "CODE-mount-toast-system",
@@ -849,16 +849,20 @@
     {
       "id": "CHORE-hardcoded-config-to-env",
       "title": "Move the two placeholder values that have no env var into configuration: the warehouse origin address (lib/envia.ts:9-14) and the WhatsApp support number (components/layout/merchant-sidebar.tsx:21)",
-      "lane": "loose_ends",
+      "lane": "shipped",
       "home_lane": "loose_ends",
-      "status": "todo",
+      "status": "shipped",
       "priority": "medium",
       "owner_terminal": "unassigned",
       "gate": "green_self_merge",
       "blocked_on": null,
       "last_checkpoint": "2026-08-21",
-      "evidence": null,
-      "notes": "P2 · Source: audit §4; .env.example TODO-REAL-VALUE block. ADDED-BY-SWEEP. Capture the warehouse address before CODE-remove-dead-integrations deletes lib/envia.ts. ORDERING TRAP DISCHARGED 2026-08-21, PR #29. lib/envia.ts is deleted, so item 1 (the warehouse origin address) no longer exists anywhere in source. ITS PLACEHOLDER VALUE IS PRESERVED HERE VERBATIM, because this card is now the only record of what shape the value takes: name \"LABLLD\", company \"LABLLD SAS\", email ops@lablld.com, phone 3001234567, street \"Calle 50\", number \"1\", district \"El Centro\", city \"Medellín\", state \"Antioquia\", country \"CO\", postalCode \"050021\" — carried in code under the note \"Update with actual warehouse address once available\". Package defaults alongside it were length 25, width 18, height 5 and a default weight of 0.3 kg. NOTHING READS ANY OF IT TODAY. When shipping is actually built, the real address goes in as configuration rather than back into a constant."
+      "evidence": {
+        "kind": "pr",
+        "ref": "#43",
+        "at": "2026-08-21"
+      },
+      "notes": "P2 · Source: audit §4; .env.example TODO-REAL-VALUE block. ADDED-BY-SWEEP. Capture the warehouse address before CODE-remove-dead-integrations deletes lib/envia.ts. ORDERING TRAP DISCHARGED 2026-08-21, PR #29. lib/envia.ts is deleted, so item 1 (the warehouse origin address) no longer exists anywhere in source. ITS PLACEHOLDER VALUE IS PRESERVED HERE VERBATIM, because this card is now the only record of what shape the value takes: name \"LABLLD\", company \"LABLLD SAS\", email ops@lablld.com, phone 3001234567, street \"Calle 50\", number \"1\", district \"El Centro\", city \"Medellín\", state \"Antioquia\", country \"CO\", postalCode \"050021\" — carried in code under the note \"Update with actual warehouse address once available\". Package defaults alongside it were length 25, width 18, height 5 and a default weight of 0.3 kg. NOTHING READS ANY OF IT TODAY. When shipping is actually built, the real address goes in as configuration rather than back into a constant. SHIPPED 2026-08-21 in PR #43. Both items closed, by different routes. ITEM 1, the warehouse origin address: MOOT. lib/envia.ts was deleted in PR #29 and nothing reads the address, so there is nothing to move into configuration. Its placeholder value stays recorded in this card’s notes above, which is the only surviving record of what shape the value takes when shipping is actually built. ITEM 2, the WhatsApp support number: NEXT_PUBLIC_SUPPORT_WHATSAPP, with NEXT_PUBLIC_HELP_CENTER_URL beside it since the same line hardcoded that too. Both documented in .env.example and both OPTIONAL WITH THE OLD LITERAL AS FALLBACK, so an unset var degrades to today’s behaviour rather than to a dead link — which matters because these are read at build time and a missing value would otherwise ship a broken support link. NEXT_PUBLIC_ is deliberate and not laziness: the sidebar is a client component, so the value reaches the browser however it is passed, and a support number is not a secret. The number was also URL-encoded by hand inside a query string; it is encodeURIComponent’d now, so a number entered in any reasonable format still produces a working link."
     },
     {
       "id": "CHORE-rewrite-claude-md",
@@ -968,9 +972,9 @@
       "owner_terminal": "unassigned",
       "gate": "ivan_merge",
       "blocked_on": null,
-      "last_checkpoint": "2026-08-20",
+      "last_checkpoint": "2026-08-21",
       "evidence": null,
-      "notes": "P2 · Source: schema notes C5, D6. ADDED-BY-SWEEP. Same family of question as CHORE-verify-wompi-price-unit: decide the money representation once, across Zod, the columns and the Wompi call."
+      "notes": "P2 · Source: schema notes C5, D6. ADDED-BY-SWEEP. Same family of question as CHORE-verify-wompi-price-unit: decide the money representation once, across Zod, the columns and the Wompi call. CODE HALF DONE 2026-08-21 in PR #43, migration AUTHORED AND NOT APPLIED (0007_money_column_types.sql). Card stays open until Ivan applies it. THE ANSWER CAME FROM THE CODE, not from the owner, because it is a factual disagreement with a knowable right answer: five columns are named *_cop, four are integer with .int() on their Zod, and one — orders.fulfillment_fee_cop — is numeric(12,2) with a bare z.number(). COP has no minor unit in everyday use and four of the five declarations already said so, so the odd one out is the one that changes. Both Zod declarations now carry .int().min(0). THE MIGRATION CARRIES A MANDATORY PRE-CHECK and says so in capitals: count rows where fulfillment_fee_cop <> round(fulfillment_fee_cop). If that is not zero, DO NOT APPLY — some rows carry centavos, which means either a real charge was recorded in a different unit or something wrote a computed value, and rounding those silently would change money that has already moved. DELIBERATELY NOT PREJUDGED: CHORE-verify-wompi-price-unit asks whether lib/wompi.ts is right to multiply COP by 100 for amount_in_cents. Same money-representation family, different boundary, and it is answered against a sandbox transaction rather than by reading SQL. This migration is about what the COLUMN holds, not what Wompi receives."
     },
     {
       "id": "UI-catalog",
