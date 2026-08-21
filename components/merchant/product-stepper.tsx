@@ -8,7 +8,7 @@ import { ProductStepMockup } from './product-step-mockup'
 import { ProductStepShipping } from './product-step-shipping'
 import { saveMerchantProductAction, getLabelStatusAction, generateProductMockupAction } from '@/app/(merchant)/products/[id]/actions'
 import { publishToShopifyAction } from '@/app/(merchant)/catalog/[slug]/actions'
-import { MOCKUP_LIMIT } from '@/lib/limits'
+import { MOCKUP_LIMIT, LABEL_MAX_MB } from '@/lib/limits'
 import type { MerchantProduct, Plan, LabelStatus, ThemeLabel } from '@/types'
 
 // SIX steps, not the design's four. The design has no Envío, no Revisión and no
@@ -217,7 +217,7 @@ export function ProductStepper({ productId, productName, dims, canvaUrl, themeLa
                   <p className="text-sm font-semibold">Verificación automática</p>
                   <span className="text-xs bg-emerald-100 text-emerald-700 font-semibold px-2.5 py-0.5 rounded-full">Aprobado</span>
                 </div>
-                {['Resolución ≥ 300 DPI', 'Dimensiones correctas', 'Zona regulatoria intacta', 'Campos requeridos presentes', 'Tamaño < 15MB'].map((c) => (
+                {['Resolución ≥ 300 DPI', 'Dimensiones correctas', 'Zona regulatoria intacta', 'Campos requeridos presentes', `Tamaño ≤ ${LABEL_MAX_MB} MB`].map((c) => (
                   <div key={c} className="flex items-center gap-2 py-1.5 border-t border-gray-100 text-sm">
                     <span className="text-emerald-500 shrink-0 font-bold">✓</span>{c}
                   </div>
