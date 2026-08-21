@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { SupplementFactsPanel } from '@/components/merchant/supplement-facts-panel'
+import { showsSupplementFacts } from '@/lib/product-category'
 import type { Product } from '@/types'
 
 type TabsProps = Pick<
@@ -16,6 +17,7 @@ type TabsProps = Pick<
   | 'warning'
   | 'science_facts'
   | 'supplement_facts'
+  | 'category'
 > & { fulfillmentNote?: string | null }
 
 // Three edge-to-edge tabs, per the design: Resumen | Detalles | Entrega. Every
@@ -41,7 +43,10 @@ function Block({ title, children }: { title: string; children: React.ReactNode }
 
 export function ProductDetailTabs({ fulfillmentNote, ...props }: TabsProps) {
   const [tab, setTab] = useState<TabKey>('overview')
-  const { supplement_facts, science_facts } = props
+  const { science_facts } = props
+  // Gated on CATEGORY, not on data presence. It used to render wherever facts
+  // happened to be filled in, so a cosmetic with facts showed a supplement label.
+  const supplement_facts = showsSupplementFacts(props.category) ? props.supplement_facts : null
 
   return (
     <div>
