@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { Badge } from '@/components/ui/badge'
+import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from '@/lib/order-status'
 import { formatCOP, formatDate, isAdmin } from '@/lib/utils'
 import type { Order } from '@/types'
 
@@ -23,50 +23,62 @@ export default async function AdminDashboardPage() {
 
   const orders = (ordersRes.data as unknown as (Order & { merchant: { full_name: string } | null })[]) ?? []
 
+  // Every card links somewhere real. "Merchants activos" pointed at href="#",
+  // which looks clickable, is clickable, and goes nowhere.
   const stats = [
-    { label: 'Órdenes por procesar', value: paidRes.count ?? 0, href: '/admin/orders', color: 'text-amber-600' },
-    { label: 'Etiquetas pendientes', value: labelsRes.count ?? 0, href: '/admin/labels', color: 'text-blue-600' },
-    { label: 'Merchants activos', value: merchantsRes.count ?? 0, href: '#', color: 'text-emerald-600' },
+    { label: 'Órdenes por procesar', value: paidRes.count ?? 0, href: '/admin/orders?status=paid' },
+    { label: 'Etiquetas pendientes', value: labelsRes.count ?? 0, href: '/admin/labels' },
+    { label: 'Merchants con plan', value: merchantsRes.count ?? 0, href: '/admin/merchants?estado=active' },
   ]
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Dashboard</h1>
+      <h1 className="text-[36px] font-normal leading-[1.12] tracking-[0]">Dashboard</h1>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid gap-3 sm:grid-cols-3">
         {stats.map((s) => (
-          <Link key={s.label} href={s.href} className="bg-white rounded-lg border p-5 hover:border-gray-300 transition-colors">
-            <p className="text-sm text-muted-foreground">{s.label}</p>
-            <p className={`text-3xl font-bold mt-1 ${s.color}`}>{s.value}</p>
+          <Link key={s.label} href={s.href}
+            className="rounded-[18px] border border-black/[.08] bg-white px-5 py-4 transition-colors hover:border-black/25">
+            <p className="text-[12.5px] text-[#86868B]">{s.label}</p>
+            <p className="mt-1 text-[26px] font-normal leading-tight tracking-[-0.01em] text-[#1D1E20]">{s.value}</p>
           </Link>
         ))}
       </div>
 
-      <div className="bg-white rounded-lg border">
-        <div className="flex items-center justify-between px-5 py-4 border-b">
-          <h2 className="font-semibold">Órdenes recientes</h2>
-          <Link href="/admin/orders" className="text-sm text-muted-foreground hover:underline">Ver todas</Link>
+      <div className="rounded-[22px] border border-black/[.08] bg-white p-[22px] shadow-[0_1px_2px_rgba(0,0,0,.03)]">
+        <div className="flex flex-wrap items-baseline justify-between gap-3">
+          <h2 className="text-[18px] font-medium text-[#1D1E20]">Órdenes recientes</h2>
+          <Link href="/admin/orders" className="text-[13.5px] font-medium text-[#1D1E20] underline-offset-4 hover:underline">
+            Ver todas
+          </Link>
         </div>
+
         {orders.length === 0 ? (
-          <p className="text-center text-muted-foreground py-8 text-sm">No hay órdenes aún.</p>
+          <div className="mt-5 rounded-[18px] border border-dashed border-black/[.12] py-14 text-center">
+            <p className="text-[15px] text-[#6E6E73]">No hay órdenes aún.</p>
+          </div>
         ) : (
-          <div className="divide-y">
+          <div className="mt-4 divide-y divide-black/[.05]">
             {orders.map((order) => (
               <Link key={order.id} href={`/admin/orders/${order.id}`}
-                className="flex flex-wrap items-center justify-between px-4 md:px-5 py-3 hover:bg-muted/40 gap-2">
+                className="flex flex-wrap items-center justify-between gap-3 py-3.5 transition-colors hover:bg-black/[.015]">
                 <div className="min-w-0">
-                  <p className="font-medium text-sm">#{order.shopify_order_number ?? order.id.slice(0, 8)}</p>
-                  <p className="text-xs text-muted-foreground truncate">
+                  <p className="text-[14.5px] font-medium text-[#1D1E20]">
+                    #{order.shopify_order_number ?? order.id.slice(0, 8)}
+                  </p>
+                  <p className="truncate text-[12.5px] text-[#86868B]">
                     {order.merchant?.full_name ?? '—'} · {order.customer_name ?? '—'} · {formatDate(order.created_at)}
                   </p>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex shrink-0 items-center gap-3">
                   {order.fulfillment_cost && (
-                    <span className="text-sm font-medium">{formatCOP(order.fulfillment_cost)}</span>
+                    <span className="text-[14px] text-[#1D1E20]">{formatCOP(order.fulfillment_cost)}</span>
                   )}
-                  <Badge variant={order.status === 'paid' ? 'outline' : order.status === 'payment_failed' ? 'destructive' : 'default'}>
-                    {order.status}
-                  </Badge>
+                  {/* This rendered {order.status} raw until W3, so an operator
+                      read "payment_failed" and "in_production". */}
+                  <span className={`inline-flex rounded-full px-2.5 py-1 text-[12px] font-medium ${ORDER_STATUS_COLORS[order.status]}`}>
+                    {ORDER_STATUS_LABELS[order.status]}
+                  </span>
                 </div>
               </Link>
             ))}

@@ -1,27 +1,24 @@
-import Image from 'next/image'
+import { Suspense } from 'react'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { signLabelUrls } from '@/lib/storage'
-import { Badge } from '@/components/ui/badge'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { LabelActions } from '@/components/admin/label-actions'
-import { formatDate, isAdmin } from '@/lib/utils'
-import type { MerchantLabel, Merchant } from '@/types'
+import { ListingControls } from '@/components/admin/listing-controls'
+import { AdminLabelsTable, type LabelRow as Row } from '@/components/admin/admin-labels-table'
+import { isAdmin } from '@/lib/utils'
 
-type Row = MerchantLabel & {
-  merchant: Pick<Merchant, 'id' | 'email' | 'full_name'> | null
-  productName?: string | null
+const FACETS = [
+  { value: 'pending', label: 'Pendiente' },
+  { value: 'approved', label: 'Aprobada' },
+  { value: 'rejected', label: 'Rechazada' },
+]
+
+interface PageProps {
+  searchParams: Promise<{ q?: string; estado?: string }>
 }
 
-const STATUS_VARIANTS: Record<string, 'secondary' | 'default' | 'destructive'> = {
-  pending: 'secondary', approved: 'default', rejected: 'destructive',
-}
-const STATUS_LABELS: Record<string, string> = {
-  pending: 'Pendiente', approved: 'Aprobada', rejected: 'Rechazada',
-}
-
-export default async function AdminLabelsPage() {
+export default async function AdminLabelsPage({ searchParams }: PageProps) {
+  const params = await searchParams
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user || !isAdmin(user.email)) redirect('/login')
@@ -32,7 +29,7 @@ export default async function AdminLabelsPage() {
     .select('*, merchant:merchants(id,email,full_name)')
     .order('created_at', { ascending: false })
 
-  const rows = (data as unknown as Row[]) ?? []
+  let rows = (data as unknown as Row[]) ?? []
 
   if (rows.length > 0) {
     const merchantIds = [...new Set(rows.map((r) => r.merchant_id))]
@@ -49,64 +46,35 @@ export default async function AdminLabelsPage() {
     rows.forEach((r) => { r.productName = nameMap.get(`${r.merchant_id}:${r.label_url}`) ?? null })
   }
 
+  const totalAll = rows.length
+  const counts = new Map<string, number>()
+  for (const r of rows) counts.set(r.status, (counts.get(r.status) ?? 0) + 1)
+
+  if (params.estado) rows = rows.filter((r) => r.status === params.estado)
+  if (params.q) {
+    const q = params.q.toLowerCase()
+    rows = rows.filter((r) =>
+      (r.name ?? '').toLowerCase().includes(q) ||
+      (r.productName ?? '').toLowerCase().includes(q) ||
+      (r.merchant?.full_name ?? '').toLowerCase().includes(q) ||
+      (r.merchant?.email ?? '').toLowerCase().includes(q))
+  }
+
   // nameMap above keys on the STORED label_url, so signing must not touch it.
   const viewUrls = await signLabelUrls(rows.map((r) => r.label_url))
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-6">Aprobación de etiquetas</h1>
-      <div className="bg-white rounded-lg border overflow-x-auto">
-        <Table className="min-w-[700px]">
-          <TableHeader>
-            <TableRow>
-              <TableHead>Etiqueta</TableHead>
-              <TableHead>Nombre</TableHead>
-              <TableHead>Producto</TableHead>
-              <TableHead>Merchant</TableHead>
-              <TableHead>Estado</TableHead>
-              <TableHead>Fecha</TableHead>
-              <TableHead>Acciones</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {rows.map((row, i) => (
-              <TableRow key={row.id}>
-                <TableCell>
-                  <a href={viewUrls[i] ?? row.label_url} target="_blank" rel="noopener noreferrer">
-                    <Image src={viewUrls[i] ?? row.label_url} alt="Etiqueta" width={60} height={60}
-                      unoptimized
-                      className="rounded border object-contain bg-gray-50" />
-                  </a>
-                </TableCell>
-                <TableCell className="font-medium">{row.name ?? '—'}</TableCell>
-                <TableCell className="text-sm text-muted-foreground">{row.productName ?? '—'}</TableCell>
-                <TableCell>
-                  <p className="text-sm">{row.merchant?.full_name ?? '—'}</p>
-                  <p className="text-xs text-muted-foreground">{row.merchant?.email}</p>
-                </TableCell>
-                <TableCell>
-                  <div className="space-y-1">
-                    <Badge variant={STATUS_VARIANTS[row.status]}>{STATUS_LABELS[row.status]}</Badge>
-                    {row.status === 'rejected' && row.rejection_reason && (
-                      <p className="text-xs text-muted-foreground max-w-[150px]">{row.rejection_reason}</p>
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell className="text-muted-foreground text-sm">{formatDate(row.created_at)}</TableCell>
-                <TableCell>
-                  {row.status === 'pending' && <LabelActions merchantProductId={row.id} />}
-                </TableCell>
-              </TableRow>
-            ))}
-            {rows.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                  No hay etiquetas pendientes.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+    <div className="space-y-6">
+      <h1 className="text-[36px] font-normal leading-[1.12] tracking-[0]">Aprobación de etiquetas</h1>
+      <div className="rounded-[22px] border border-black/[.08] bg-white p-[22px] shadow-[0_1px_2px_rgba(0,0,0,.03)]">
+        <Suspense fallback={null}>
+          <ListingControls basePath="/admin/labels" placeholder="Buscar por etiqueta, producto o merchant"
+            facetKey="estado" total={totalAll}
+            facets={FACETS.map((f) => ({ ...f, count: counts.get(f.value) ?? 0 }))} />
+        </Suspense>
+        <div className="mt-6">
+          <AdminLabelsTable rows={rows} viewUrls={viewUrls} filtered={Boolean(params.q || params.estado)} />
+        </div>
       </div>
     </div>
   )

@@ -23,11 +23,15 @@ export default async function AdminNewOrderPage() {
 
   return (
     <div>
-      <Link href="/admin/orders" className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 mb-5">
+      <Link href="/admin/orders" className="mb-4 inline-flex items-center gap-1.5 text-[13.5px] text-[#86868B] transition-colors hover:text-[#1D1E20]">
         <ArrowLeft className="h-4 w-4" /> Órdenes
       </Link>
-      <h1 className="text-2xl font-bold mb-6">Nuevo pedido (admin)</h1>
-      <AdminOrderForm merchants={merchants} products={products} />
+      {/* The title said "Nuevo pedido (admin)". An admin creating an order from
+          the admin app does not need to be told which app they are in. */}
+      <h1 className="mb-6 text-[36px] font-normal leading-[1.12] tracking-[0]">Nuevo pedido</h1>
+      <div className="rounded-[22px] border border-black/[.08] bg-white p-[22px] shadow-[0_1px_2px_rgba(0,0,0,.03)]">
+        <AdminOrderForm merchants={merchants} products={products} />
+      </div>
     </div>
   )
 }
