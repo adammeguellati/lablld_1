@@ -61,110 +61,112 @@ export default async function ProductDetailPage({ params }: PageProps) {
   const minRateCop = rateCops.length ? Math.min(...rateCops) : null
   const maxRateCop = rateCops.length ? Math.max(...rateCops) : null
 
+  const fulfillmentNote =
+    product.shipping_cost_cop
+      ? `Tarifa de cumplimiento: ${formatCOP(product.shipping_cost_cop)} por orden.`
+      : minRateCop !== null
+        ? `Tarifa de cumplimiento: ${minRateCop === maxRateCop ? formatCOP(minRateCop) : `${formatCOP(minRateCop)} – ${formatCOP(maxRateCop!)}`} por orden.`
+        : null
+
   return (
-    <div className="max-w-6xl mx-auto">
-      <nav className="text-sm text-muted-foreground mb-6 flex items-center gap-2 flex-wrap">
-        <Link href="/catalog" className="hover:text-foreground transition-colors">
-          Catálogo
-        </Link>
+    <div>
+      <nav className="mb-5 flex flex-wrap items-center gap-2 text-[13.5px] text-[#86868B]">
+        <Link href="/catalog" className="transition-colors hover:text-[#1D1E20]">Catálogo</Link>
         <span>/</span>
-        <span className="text-foreground">{product.name}</span>
+        <span className="text-[#1D1E20]">{product.name}</span>
       </nav>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10 mb-10 lg:mb-14">
-        <ProductGallery images={product.images} name={product.name} />
+      <ProductGallery images={product.images} name={product.name} />
 
-        <div className="space-y-4">
-          {showNew && (
-            <Badge className="bg-emerald-500 text-white border-0">NEW</Badge>
-          )}
-          <h1 className="text-3xl font-bold leading-tight">{product.name}</h1>
-          {product.shipping_scope && (
-            <p className="text-sm text-muted-foreground">{product.shipping_scope}</p>
-          )}
-          {product.short_description && (
-            <p className="text-muted-foreground">{product.short_description}</p>
-          )}
-          <div className="py-1 space-y-3">
-            {price !== null ? (
-              <div>
-                <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wide">
-                  Tu precio por orden
-                </p>
-                <p className="text-3xl font-bold">{formatCOP(Math.round(price))}</p>
-                {merchant.plan === 'plus' && (
-                  <p className="text-xs text-emerald-600 mt-1">Incluye descuento Plus (18%)</p>
-                )}
-              </div>
-            ) : !merchant?.plan ? (
-              <Link
-                href="/settings/billing"
-                className="inline-block border rounded-md px-4 py-2 text-sm font-medium hover:bg-muted transition-colors"
-              >
-                Ver precio →
-              </Link>
-            ) : (
-              <p className="text-sm text-muted-foreground">Precio en configuración</p>
+      <div className="mt-10 grid grid-cols-1 gap-x-[52px] gap-y-8 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <div className="flex flex-wrap items-center gap-2.5">
+            {showNew && (
+              <Badge className="border-0 bg-[#1D1E20] text-white">Nuevo</Badge>
             )}
-            <div className="border rounded-md divide-y text-sm">
-              {product.price_cop && (
-                <div className="flex items-center justify-between px-3 py-2">
-                  <span className="text-muted-foreground">Precio sugerido de venta</span>
-                  <span className="font-semibold">{formatCOP(product.suggested_retail_price_cop ?? Math.round(product.price_cop * 3))}</span>
-                </div>
-              )}
-              {product.shipping_cost_cop ? (
-                <div className="flex items-center justify-between px-3 py-2">
-                  <span className="text-muted-foreground">Tarifa de cumplimiento</span>
-                  <span className="font-medium text-xs">{formatCOP(product.shipping_cost_cop)} / orden</span>
-                </div>
-              ) : minRateCop !== null ? (
-                <div className="flex items-center justify-between px-3 py-2">
-                  <span className="text-muted-foreground">Tarifa de cumplimiento</span>
-                  <span className="font-medium text-xs">
-                    {minRateCop === maxRateCop
-                      ? formatCOP(minRateCop)
-                      : `${formatCOP(minRateCop)} – ${formatCOP(maxRateCop!)}`}
-                    {' '}/ orden
-                  </span>
-                </div>
-              ) : null}
-              <div className="flex items-center justify-between px-3 py-2">
-                <span className="text-muted-foreground">Costo de envío</span>
-                <a href="https://lablld.com/env%C3%ADos-y-cobertura/env%C3%ADos-colombia" target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline">Ver precios por región en Colombia →</a>
-              </div>
-            </div>
+            {product.shipping_scope && (
+              <span className="text-[13.5px] text-[#86868B]">{product.shipping_scope}</span>
+            )}
           </div>
+          <h1 className="mt-2.5 text-[36px] font-normal leading-[1.12] tracking-[-0.008em] text-pretty">
+            {product.name}
+          </h1>
+          {product.short_description && (
+            <p className="mt-3 max-w-2xl text-[15.5px] leading-[1.65] text-[#6E6E73] text-pretty">
+              {product.short_description}
+            </p>
+          )}
+
           {product.icons && product.icons.length > 0 && (
-            <div className="flex flex-wrap gap-2 pt-1">
+            <div className="mt-5 flex flex-wrap gap-2">
               {product.icons.map((icon) => (
-                <span key={icon} className="text-xs border rounded-full px-3 py-1">
+                <span key={icon} className="rounded-full border border-black/10 bg-white px-3 py-1 text-[12.5px] text-[#3A3A3D]">
                   {ICON_LABELS[icon] ?? icon}
                 </span>
               ))}
             </div>
           )}
-          <div className="pt-1 flex flex-wrap gap-2 items-start">
+        </div>
+
+        <div className="rounded-[18px] border border-black/[.08] bg-white p-5">
+          {price !== null ? (
+            <>
+              <p className="text-[12.5px] uppercase tracking-wide text-[#86868B]">Tu precio por orden</p>
+              <p className="mt-1 text-[32px] font-normal leading-none tracking-[-0.008em]">
+                {formatCOP(Math.round(price))}
+              </p>
+              {merchant.plan === 'plus' && (
+                <p className="mt-1.5 text-[12.5px] text-[#16A34A]">Incluye descuento Plus (18%)</p>
+              )}
+            </>
+          ) : !merchant?.plan ? (
+            <Link
+              href="/settings/billing"
+              className="inline-flex items-center rounded-[11px] border border-black/10 px-4 py-2.5 text-[14.5px] font-medium transition-colors hover:border-black/25"
+            >
+              Ver precio →
+            </Link>
+          ) : (
+            <p className="text-[14.5px] text-[#86868B]">Precio en configuración</p>
+          )}
+
+          <dl className="mt-4 space-y-2 border-t border-black/[.08] pt-4 text-[14px]">
+            {product.price_cop && (
+              <div className="flex items-baseline justify-between gap-3">
+                <dt className="text-[#86868B]">Precio sugerido de venta</dt>
+                <dd className="font-medium text-[#1D1E20]">
+                  {formatCOP(product.suggested_retail_price_cop ?? Math.round(product.price_cop * 3))}
+                </dd>
+              </div>
+            )}
+            {fulfillmentNote && (
+              <div className="flex items-baseline justify-between gap-3">
+                <dt className="text-[#86868B]">Tarifa de cumplimiento</dt>
+                <dd className="text-right text-[13px] font-medium text-[#1D1E20]">
+                  {fulfillmentNote.replace('Tarifa de cumplimiento: ', '').replace(' por orden.', ' / orden')}
+                </dd>
+              </div>
+            )}
+          </dl>
+
+          <div className="mt-5 flex flex-col gap-2.5">
             <Link
               href={`/products/${product.id}`}
-              className="inline-flex items-center justify-center rounded-md bg-gray-900 text-white px-4 py-2.5 text-sm font-medium hover:bg-gray-700 transition-colors"
+              className="flex items-center justify-center rounded-[15px] bg-[#1D1E20] px-6 py-3 text-[15px] font-medium text-white transition-colors hover:bg-[#F97316]"
             >
               {merchantProduct ? 'Ir a configuración →' : 'Agregar a mis productos'}
             </Link>
             <Link
               href={`/orders/new?productId=${product.id}&sample=1`}
-              className="inline-flex items-center justify-center rounded-md border border-gray-300 text-gray-700 px-4 py-2.5 text-sm font-medium hover:bg-gray-50 transition-colors"
+              className="flex items-center justify-center rounded-[15px] border border-black/10 px-6 py-3 text-[15px] font-medium text-[#1D1E20] transition-colors hover:border-black/25"
             >
-              Solicitar Muestra
+              Solicitar muestra
             </Link>
-          </div>
-          <div className="bg-muted/50 border rounded-md p-3 text-xs text-muted-foreground leading-relaxed">
-            {DISCLAIMER}
           </div>
         </div>
       </div>
 
-      <div className="mb-14">
+      <div className="mt-12">
         <ProductDetailTabs
           long_description={product.long_description}
           ingredients_list={product.ingredients_list}
@@ -176,23 +178,28 @@ export default async function ProductDetailPage({ params }: PageProps) {
           warning={product.warning}
           science_facts={product.science_facts}
           supplement_facts={product.supplement_facts}
+          fulfillmentNote={fulfillmentNote}
         />
       </div>
 
       {product.benefit_blocks && product.benefit_blocks.length > 0 && (
-        <section className="bg-gray-900 text-white rounded-xl p-8 mb-8">
-          <h2 className="text-2xl font-bold mb-8 text-center">Beneficios</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <section className="mt-12 rounded-[22px] bg-[#1D1E20] p-10 text-white">
+          <h2 className="text-center text-[32px] font-normal tracking-[-0.008em]">Beneficios</h2>
+          <div className="mt-9 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {product.benefit_blocks.map((block, i) => (
-              <div key={i} className="text-center space-y-2">
+              <div key={i} className="space-y-2 text-center">
                 <div className="text-4xl">{block.icon}</div>
-                <h3 className="font-semibold">{block.title}</h3>
-                <p className="text-sm text-gray-300">{block.description}</p>
+                <p className="text-[17px] font-medium">{block.title}</p>
+                <p className="text-[14.5px] leading-[1.6] text-white/70">{block.description}</p>
               </div>
             ))}
           </div>
         </section>
       )}
+
+      <p className="mt-10 border-t border-black/[.08] pt-5 text-[12.5px] leading-[1.7] text-[#AEAEB2]">
+        {DISCLAIMER}
+      </p>
     </div>
   )
 }
