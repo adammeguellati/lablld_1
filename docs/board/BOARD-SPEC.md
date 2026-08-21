@@ -243,7 +243,25 @@ the ids are load-bearing configuration, not labels.
   by an executor. Unchanged by this grant.
 - **If a card's `gate` field contradicts a verbal grant, the board JSON wins.**
   Halt on that card and flag it rather than resolving the disagreement in
-  either direction.
+  either direction — *unless* the exception below applies.
+
+**The authorizing-message exception.** Added 2026-08-21, after the rule above
+produced the wrong answer twice in one run.
+
+> When the contradiction is between the board JSON and **the same message that
+> authorized the work**, the **message wins**. Bring the JSON into line and
+> record the source on each card it changes.
+
+The reason is that the general rule assumes the grant and the work were
+authorized separately, so a disagreement means somebody lost track. When one
+message both dispatches a run *and* grants the authority to execute it, a
+contradicting `gate` is stale JSON, not a competing instruction — and halting
+would stop the very run the message exists to start.
+
+The exception is narrow on purpose. **Halt-loud stays the answer for every
+conflict the authorizing message does not itself resolve**, including a grant
+that arrives separately from the dispatch, a grant that does not name the card,
+and any disagreement about anything other than `gate`.
 
 **Merging is not shipping.** The two were the same thing for routine work and
 are not the same thing for visual work:
@@ -289,9 +307,23 @@ no knowable right answer, which is exactly why it needs the owner. Sorting by
 that test is what keeps the queue moving without quietly deciding product
 questions.
 
-**Copy that states a limit should read from the constant that enforces it**
-wherever practical, so a future ruling changes one value rather than a value and
-a sentence that drift apart.
+### Copy reads the constant that enforces it
+
+Promoted to doctrine on 2026-08-21, after a ruling named the wrong limit because
+the number lived in a sentence rather than next to its check.
+
+> **Wherever a limit, quota or count is DISPLAYED, the copy reads the constant
+> that enforces it.** Never a literal in a sentence.
+
+A limit written twice is a limit that will eventually be wrong in one of the two
+places, and the copy is always the half that rots — the check keeps working, so
+nothing fails, and the screen quietly lies. It also makes the limit auditable:
+"which number does this screen actually enforce" becomes a question you answer by
+reading one identifier, not by tracing an uploader.
+
+The corollary matters as much: **when two screens enforce different values, they
+state different values.** Do not average them, and do not quote one screen's
+limit on another. Making them agree is a product decision and belongs on a card.
 
 ## The portal (what the artifact is)
 
