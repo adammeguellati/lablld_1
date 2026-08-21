@@ -13,7 +13,7 @@ import { ShippingRatesEditor, type RateInput } from '@/components/admin/shipping
 import { ProductImageUploader } from '@/components/admin/product-image-uploader'
 import { ThemeLabelsEditor } from '@/components/admin/theme-labels-editor'
 import type { ProductCategory, Plan, SupplementFacts, BenefitBlock, ScienceFact, ThemeLabel } from '@/types'
-import { CATEGORY_LABELS, CATEGORY_VALUES } from '@/lib/product-category'
+import { CATEGORY_LABELS, CATEGORY_VALUES, showsSupplementFacts } from '@/lib/product-category'
 
 const FORMATS = [
   { value: 'capsule', label: 'Cápsula' }, { value: 'powder', label: 'Polvo' },
@@ -153,9 +153,15 @@ export function ProductForm() {
         <F label="Modo de uso"><Input name="suggested_use" /></F>
         <F label="Advertencia"><textarea name="warning" rows={2} className={TA} /></F>
       </S>
-      <S title="Supplement Facts">
-        <SupplementFactsEditor onChange={setSupplementFacts} />
-      </S>
+      {/* Supplements only, per Adam ruling 2026-08-21. Any facts already
+          stored on a product that has since been recategorised are left in the
+          column untouched — the save sends undefined, which the PATCH drops —
+          so correcting the category brings them back rather than retyping. */}
+      {showsSupplementFacts(category) && (
+        <S title="Supplement Facts">
+          <SupplementFactsEditor onChange={setSupplementFacts} />
+        </S>
+      )}
       <S title="Benefit blocks">
         <BenefitBlocksEditor onChange={setBenefitBlocks} />
       </S>

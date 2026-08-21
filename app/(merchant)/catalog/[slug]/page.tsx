@@ -179,6 +179,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
           warning={product.warning}
           science_facts={product.science_facts}
           supplement_facts={product.supplement_facts}
+          category={product.category}
           fulfillmentNote={fulfillmentNote}
         />
       </div>
