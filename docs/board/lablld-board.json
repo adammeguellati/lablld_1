@@ -412,41 +412,49 @@
       "owner_terminal": "pink",
       "gate": "green_self_merge",
       "blocked_on": null,
-      "last_checkpoint": "2026-08-20",
+      "last_checkpoint": "2026-08-21",
       "evidence": {
         "kind": "pr",
         "ref": "#5",
         "at": "2026-08-20"
       },
-      "notes": "P2 · Source: audit §8.6, §8.4. ADDED-BY-SWEEP. Blocks INFRA-ci-and-tests: eslint cannot be a required check while it fails. PROMOTED from loose ends to the active queue and WORKED 2026-08-20 by PINK inside PR #5, because Ivan's acceptance criterion for INFRA-ci-and-tests is that lint be green on the PR itself, and a red lint cannot become a required check. MEASURED RATHER THAN TRUSTED: the audit's figure of 18 errors is exact for application source. The raw repo-wide run reports 20 errors and 55 warnings, but design_handoff_lablld_dashboard/ is GITIGNORED and absent in CI, which accounts for the difference. Ivan's spec is --max-warnings=0, so 21 warnings became blocking too, not just the 18 errors. FIXED: 14 react/no-unescaped-entities (literal quotes in JSX on privacidad, terminos, admin settings); 4 react-hooks/refs, the real bug, in the two copy-pasted filter components, by moving the router and searchParams ref writes out of render into an effect, which preserves the debounce dependency array of [q] exactly; 4 unused imports/vars removed, including a dead index prop on ThemeLabelCard that the call site passed and the component never read. NOT FIXED, deferred with reasons in code: 3 @next/next/no-img-element on user-uploaded storage URLs in fixed-size containers. Converting to next/image is a UI decision and SEC-labels-bucket will move those URLs to signed URLs, which changes the shape the optimizer's remotePatterns must match, so converting now would be redone. NOT DELETED: the unused `state` read at app/api/shopify/callback/route.ts is the in-code evidence for SEC-shopify-oauth-state, so it carries a targeted disable naming that card instead of being removed. RESULT: npx eslint . --max-warnings=0 exits 0 and npx tsc --noEmit exits 0. Merged 2026-08-20 inside PR #5, since lint could not become a required check while red. Non-visual by card kind, so it ships on merge. WORTH ONE EYEBALL ANYWAY, flagged rather than assumed: the react-hooks/refs fix changed the debounced search in /catalog and /products from a ref written during render to one written in an effect. Behaviour-preserving by construction and the [q] dependency array is unchanged, but it is live merchant interaction. If search or the filter pills misbehave, this is the change to look at first."
+      "notes": "P2 · Source: audit §8.6, §8.4. ADDED-BY-SWEEP. Blocks INFRA-ci-and-tests: eslint cannot be a required check while it fails. PROMOTED from loose ends to the active queue and WORKED 2026-08-20 by PINK inside PR #5, because Ivan's acceptance criterion for INFRA-ci-and-tests is that lint be green on the PR itself, and a red lint cannot become a required check. MEASURED RATHER THAN TRUSTED: the audit's figure of 18 errors is exact for application source. The raw repo-wide run reports 20 errors and 55 warnings, but design_handoff_lablld_dashboard/ is GITIGNORED and absent in CI, which accounts for the difference. Ivan's spec is --max-warnings=0, so 21 warnings became blocking too, not just the 18 errors. FIXED: 14 react/no-unescaped-entities (literal quotes in JSX on privacidad, terminos, admin settings); 4 react-hooks/refs, the real bug, in the two copy-pasted filter components, by moving the router and searchParams ref writes out of render into an effect, which preserves the debounce dependency array of [q] exactly; 4 unused imports/vars removed, including a dead index prop on ThemeLabelCard that the call site passed and the component never read. NOT FIXED, deferred with reasons in code: 3 @next/next/no-img-element on user-uploaded storage URLs in fixed-size containers. Converting to next/image is a UI decision and SEC-labels-bucket will move those URLs to signed URLs, which changes the shape the optimizer's remotePatterns must match, so converting now would be redone. NOT DELETED: the unused `state` read at app/api/shopify/callback/route.ts is the in-code evidence for SEC-shopify-oauth-state, so it carries a targeted disable naming that card instead of being removed. RESULT: npx eslint . --max-warnings=0 exits 0 and npx tsc --noEmit exits 0. Merged 2026-08-20 inside PR #5, since lint could not become a required check while red. Non-visual by card kind, so it ships on merge. WORTH ONE EYEBALL ANYWAY, flagged rather than assumed: the react-hooks/refs fix changed the debounced search in /catalog and /products from a ref written during render to one written in an effect. Behaviour-preserving by construction and the [q] dependency array is unchanged, but it is live merchant interaction. If search or the filter pills misbehave, this is the change to look at first. RE-MEASURED 2026-08-21 during the W2 sweep: `npx eslint --max-warnings=0` exits 0 on the current tree. No remainder survived W1; there was nothing to fix in W2."
     },
     {
       "id": "CODE-remove-dead-integrations",
       "title": "Delete lib/envia.ts (109 lines, imported by nothing) and the Dynamic Mockups path (lib/dynamic-mockups.ts <- /api/mockups/generate <- mockup-preview.tsx, all unreachable); the documented mockup env var is the dead one and the live one is undocumented",
-      "lane": "in_flight",
+      "lane": "shipped",
       "home_lane": "in_flight",
-      "status": "todo",
+      "status": "shipped",
       "priority": "medium",
       "owner_terminal": "unassigned",
       "gate": "green_self_merge",
       "blocked_on": null,
       "last_checkpoint": "2026-08-21",
-      "evidence": null,
-      "notes": "P2 · Source: audit §8.3, R6. ADDED-BY-SWEEP. Note the ordering trap: CHORE-hardcoded-config-to-env reads the warehouse origin address out of lib/envia.ts:9-14, so capture that value before deleting the file. QUEUED 2026-08-21 into the W2 run order by Ivan’s dispatch; moved out of Loose ends because it is now scheduled work rather than tracked-but-unqueued hygiene."
+      "evidence": {
+        "kind": "pr",
+        "ref": "#29",
+        "at": "2026-08-21"
+      },
+      "notes": "P2 · Source: audit §8.3, R6. ADDED-BY-SWEEP. Note the ordering trap: CHORE-hardcoded-config-to-env reads the warehouse origin address out of lib/envia.ts:9-14, so capture that value before deleting the file. QUEUED 2026-08-21 into the W2 run order by Ivan’s dispatch; moved out of Loose ends because it is now scheduled work rather than tracked-but-unqueued hygiene. SHIPPED 2026-08-21 in PR #29, bundled with CODE-delete-dead-files because the two diffs are one deletion sweep. GONE: lib/envia.ts (110 lines, imported by nothing) and the entire Dynamic Mockups chain — lib/dynamic-mockups.ts, app/api/mockups/generate/route.ts and components/merchant/mockup-preview.tsx. THE ROUTE MATTERED MORE THAN THE LINE COUNT: /api/mockups/generate was a real HTTP endpoint, so it was reachable by request even though no UI called it. Reachability analysis correctly calls a route file live; only reading the product tells you nothing invokes it. SudoMock (lib/sudomock.ts) is and remains the live mockup provider. ENV FOLLOWS THE CODE: ENVIA_API_KEY, ENVIA_API_URL and DYNAMIC_MOCKUPS_API_KEY are struck from .env.example, with a note that they should come out of Vercel too. The card’s own ordering trap was honoured — the warehouse origin address was read out of lib/envia.ts:9-14 BEFORE deleting it and is preserved verbatim on CHORE-hardcoded-config-to-env, and the .env.example entry that pointed at those line numbers now points at the card instead."
     },
     {
       "id": "CODE-delete-dead-files",
       "title": "Remove the remaining ~1,700 lines across 26 unreachable files listed in audit §8.2, in one clearly-labelled commit, before any feature work; you currently cannot tell what is live by reading the tree",
-      "lane": "in_flight",
+      "lane": "shipped",
       "home_lane": "in_flight",
-      "status": "todo",
+      "status": "shipped",
       "priority": "medium",
       "owner_terminal": "unassigned",
       "gate": "green_self_merge",
       "blocked_on": null,
       "last_checkpoint": "2026-08-21",
-      "evidence": null,
-      "notes": "P2 · Source: audit R6. ADDED-BY-SWEEP. QUEUED 2026-08-21 into the W2 run order by Ivan’s dispatch; moved out of Loose ends because it is now scheduled work rather than tracked-but-unqueued hygiene."
+      "evidence": {
+        "kind": "pr",
+        "ref": "#29",
+        "at": "2026-08-21"
+      },
+      "notes": "P2 · Source: audit R6. ADDED-BY-SWEEP. QUEUED 2026-08-21 into the W2 run order by Ivan’s dispatch; moved out of Loose ends because it is now scheduled work rather than tracked-but-unqueued hygiene. SHIPPED 2026-08-21 in PR #29, bundled with CODE-remove-dead-integrations. Non-visual, ships on merge. THE AUDIT’S LIST WAS NOT TRUSTED, IT WAS RE-DERIVED, and that mattered: the audit named components/ui/sonner.tsx and components/merchant/label-uploader.tsx as dead, and both are LIVE now — W2 mounted the Toaster and W1 put the uploader in the create flow. Deleting from a list written before two waves of work would have broken the app. WHAT WAS DONE INSTEAD: a reachability pass over all 196 TS/TSX files, walking imports transitively from the real entry points (Next route files plus proxy.ts), which found 24 unreachable files totalling 1,782 lines. 23 were deleted; the four shadcn primitives are covered below. RESULT: 173 files, 169 live, and the only unreachable code left is the four shadcn UI primitives. KEPT ON PURPOSE, and this is a stated cut rather than an oversight: components/ui/dialog.tsx, sheet.tsx, tabs.tsx and separator.tsx are vendored library primitives, not app code. The audit’s complaint is that you cannot tell what is live by reading the tree, which is about application code; and W3’s admin restyle needs a confirm dialog, so deleting them now to re-add them next would be churn. If W3 does not use one, it goes then. WORTH KNOWING: app/admin/shopify/page.tsx turned out to be a four-line stub that redirected to the dashboard, with nothing anywhere linking to it — the whole /admin/shopify feature had been gutted and only its orphans remained. And components/merchant/publish-to-shopify-button.tsx was already unreachable when CODE-mount-toast-system edited its alert() calls one PR earlier; that edit was to dead code and is now moot."
     },
     {
       "id": "CODE-route-handler-use-server",
@@ -816,9 +824,9 @@
       "owner_terminal": "unassigned",
       "gate": "green_self_merge",
       "blocked_on": null,
-      "last_checkpoint": "2026-08-20",
+      "last_checkpoint": "2026-08-21",
       "evidence": null,
-      "notes": "P2 · Source: audit §4; .env.example TODO-REAL-VALUE block. ADDED-BY-SWEEP. Capture the warehouse address before CODE-remove-dead-integrations deletes lib/envia.ts."
+      "notes": "P2 · Source: audit §4; .env.example TODO-REAL-VALUE block. ADDED-BY-SWEEP. Capture the warehouse address before CODE-remove-dead-integrations deletes lib/envia.ts. ORDERING TRAP DISCHARGED 2026-08-21, PR #29. lib/envia.ts is deleted, so item 1 (the warehouse origin address) no longer exists anywhere in source. ITS PLACEHOLDER VALUE IS PRESERVED HERE VERBATIM, because this card is now the only record of what shape the value takes: name \"LABLLD\", company \"LABLLD SAS\", email ops@lablld.com, phone 3001234567, street \"Calle 50\", number \"1\", district \"El Centro\", city \"Medellín\", state \"Antioquia\", country \"CO\", postalCode \"050021\" — carried in code under the note \"Update with actual warehouse address once available\". Package defaults alongside it were length 25, width 18, height 5 and a default weight of 0.3 kg. NOTHING READS ANY OF IT TODAY. When shipping is actually built, the real address goes in as configuration rather than back into a constant."
     },
     {
       "id": "CHORE-rewrite-claude-md",
