@@ -2,7 +2,7 @@
 
 **Run:** 2026-08-21, autonomous long run (continuous with W2)
 **Terminal:** PINK · **Reviewer:** Ivan, then Adam
-**Board fingerprint at hand-off:** `8c327939a4574291` · 81 cards · 3/8 gates
+**Board fingerprint at hand-off:** `bc7c85fa4ca3b752` · 82 cards · 3/8 gates
 
 Five PRs merged (#31–#35), all green on `typecheck` + `lint` + `build`.
 **Every W3 card is `in_flight` awaiting the single consolidated W1+W2+W3 review.**
@@ -231,6 +231,7 @@ Two are new. The rest carry from W1 and W2 and are still open.
 | **NEW W3** | `PROD-ficha-content-simplification` | The design folds `supplement-facts-editor`, `benefit-blocks-editor` and `science-facts-editor` into four plain textareas. That would **drop the structured Supplement Facts panel** — which for a supplements manufacturer is a labelling-compliance artifact, not decoration. Four free-text boxes cannot produce a table with per-serving percentages, so accepting the simplification means **losing the panel, not restyling it**. Inventory Q7 leaves it open. Keep → restyle the existing editors and nothing else changes. Simplify → the panel, its editors and the columns behind them all come out, and that is a migration. |
 | **NEW W2** | `FEAT-merchant-product-delete` | Should re-adding a deleted product start **blank**, or come back with its old label, mockup and price? Today it revives. Not a bug either way; a product call. |
 | carried | `PROD-admin-nav-scope` | The designs show 3 admin nav items; the code has 6. Dropping to 3 removes the dashboard, the label queue and platform settings — all three of which W3 just restyled and all three of which an operator uses. Worth answering before anyone acts on the design's nav. |
+| **needs Adam, not a question** | `CHORE-spanish-auth-emails` | Adam must verify `lablld.com` as a sending domain in **Resend DNS**. Until he does, Supabase custom SMTP cannot be wired, no auth email template can be edited, and every password-reset mail goes out in **English**. Nothing else is blocked by it. |
 | carried | `PROD-label-approval-fork` | Three positions on label approval still unresolved |
 | carried | `PROD-order-kinds` · `PROD-supplement-facts` · `PROD-undesigned-screens` · `PROD-payouts-feature` | Unchanged |
 | carried | `BACKLOG-wholesale-line` · `BACKLOG-volume-pricing` · `BACKLOG-canva-themes` · `BACKLOG-inspirate-gallery` · `BACKLOG-realtime-orders` | Out by standing ruling or awaiting schema |
@@ -243,16 +244,39 @@ Two are new. The rest carry from W1 and W2 and are still open.
 app first in the order a merchant meets it, then the admin app in the order an
 operator works it. Nothing here needs a second browser or a second account.
 
-### Before you start — three blockers
+### Before you start — CLEARED 2026-08-21
 
-| ✔ | Do this first | Consequence if skipped |
+All six blockers are done. Kept as a record of what was applied and in what
+order, because the order was load-bearing.
+
+| ✔ | Done | Note |
 |---|---|---|
-| ☐ | **Apply migration `0005`** (soft delete) | `/products`, `/catalog` and `/dashboard` will error. **The app is broken until this is applied.** |
-| ☐ | **Apply `0004`** (bucket limits) | Uploads stay enforced by a browser `if` only |
-| ☐ | **Apply `0006`** (drop Stripe columns) — **after** the Stripe deploy | Harmless to defer |
-| ☐ | **Supabase: Redirect URL allowlist + Spanish reset template** | Password recovery renders but the email never arrives |
-| ☐ | **Stripe dashboard: delete the `/api/webhooks/stripe` endpoint** | Stripe keeps POSTing to a 404 and retrying |
-| ☐ | **Vercel: remove the five `STRIPE_*` vars** | A dead secret sits in the environment |
+| ☑ | **`0004`** — labels bucket size limit + MIME allowlist | The 10 MB limit is now a server-side boundary, not a browser `if` |
+| ☑ | **`0005`** — merchant product soft delete | The one migration the deployed code could not run without |
+| ☑ | **`0006`** — drop the Stripe columns | Applied **after** the endpoint and vars were removed. That order matters: dropping first would have left a live endpoint writing to columns that no longer existed |
+| ☑ | **Stripe dashboard: endpoint deleted** | Stripe is no longer POSTing to a 404 and retrying |
+| ☑ | **Vercel: five `STRIPE_*` vars removed** | Stripe is now absent in every sense — no code, dependency, env var, endpoint or column |
+| ☑ | **Supabase: Redirect URL allowlist** | Password recovery is **functional end to end** |
+
+**One thing is deliberately NOT done, and it does not block the review.** The
+Spanish reset-email template could not be installed: Supabase now requires custom
+SMTP before any auth template can be edited, and that is gated behind Adam
+verifying `lablld.com` in Resend DNS.
+
+So **recovery works today but its email arrives in Supabase's default English.**
+That is a real defect, it is the one English artefact in an otherwise Spanish
+sequence, and it lives on its own card — `CHORE-spanish-auth-emails` — rather
+than holding a working feature open. When you reach §A below, review the
+**screens and the flow**; the mail copy is not what is being reviewed.
+
+**Two more things worth knowing while you review:**
+
+- **Wompi sandbox keys are live in Vercel.** That is consistent with G3, whose
+  carve-out is deliberate — sandbox stops being acceptable at G4, not before.
+- **Adam has confirmed he owns every third-party account.** Recorded, but G4
+  stays `fail`: this board's rule is that a condition is fail until its evidence
+  exists, and one blanket statement is not proof of six accounts. The visible
+  loose thread is Resend — `lablld.com` is not yet a verified sending domain.
 
 ### A. Auth — 3 screens
 
@@ -260,7 +284,7 @@ operator works it. Nothing here needs a second browser or a second account.
 |---|---|---|---|
 | ☐ | `/login` | W1 restyle; W2 added *"¿La olvidaste?"* and the reset banner | Password manager offers your **saved** password (W1 fixed `autoComplete`); copy is tú throughout |
 | ☐ | `/register` | W1 restyle | Invite gating still refuses an uninvited address **with its message** |
-| ☐ | `/forgot-password` → `/reset-password` | **New in W2** | Request a reset · mail arrives **in Spanish** · link lands on the **form** not the expired state · set a password · green banner on `/login` · new password works |
+| ☐ | `/forgot-password` → `/reset-password` | **New in W2** | Request a reset · link lands on the **form** not the expired state · set a password · green banner on `/login` · new password works. **The email arrives in English — that is known, tracked on `CHORE-spanish-auth-emails`, and not what you are reviewing here.** |
 
 ### B. Merchant app — 6 screens
 
@@ -325,11 +349,11 @@ operator works it. Nothing here needs a second browser or a second account.
 
 ## 7. Board state
 
-**Fingerprint:** `8c327939a4574291` · 81 cards · **3/8 gates**
+**Fingerprint:** `bc7c85fa4ca3b752` · 82 cards · **3/8 gates**
 
 | lane | count |
 |---|---|
-| shipped | 24 |
+| shipped | 25 |
 | in flight | 23 |
 | loose ends | 19 |
 | Adam batch | 12 |
@@ -340,8 +364,26 @@ W2 feature cards, the four W3 admin cards, and `BACKLOG-label-lightbox` folded
 into `UI-admin-orders`.
 
 **3 blocked on Ivan:** `VERIFY-shopify-e2e`, `UI-stepper-step-counter` (needs a
-second observation), `INFRA-supabase-recovery-config` (two dashboard settings).
+second observation), `CHORE-spanish-auth-emails` (Resend DNS → Supabase SMTP →
+Spanish templates).
 
-Gates unchanged at 3/8. G3, G4, G6, G7 and G8 all depend on account ownership,
-paid tiers, the domain cutover and Adam running a card cycle himself — none of
-which is code work.
+`INFRA-supabase-recovery-config` **shipped** on 2026-08-21: the Redirect URL
+allowlist is the half that made recovery work, and the Spanish-template half was
+split out to `CHORE-spanish-auth-emails` once it turned out to need custom SMTP
+rather than a setting.
+
+Gates unchanged at 3/8.
+
+- **G3** (`env-real`) — Wompi sandbox keys are live in Vercel, which the gate's
+  own carve-out permits. Five `STRIPE_*` placeholders and the warehouse origin
+  address are gone from `.env.example`. Still `fail`: an executor cannot read env
+  values, so only Ivan can walk `.env.example` against the Vercel project and
+  record that every REQUIRED name carries a real value.
+- **G4** (`accounts-owned`) — Adam has confirmed he owns every third-party
+  account. Still `fail`, fail-closed: one blanket statement is not per-account
+  evidence, and Resend's sending domain is demonstrably not verified yet. The
+  Shopify app identity question also stands — `shopify.app.toml` pins the
+  `client_id`, so a transfer that ends in a *new* app silently breaks every
+  merchant's existing connection.
+- **G6, G7, G8** depend on paid tiers, the domain cutover and Adam running a card
+  cycle himself. None is code work.

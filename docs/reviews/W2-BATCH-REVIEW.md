@@ -2,7 +2,7 @@
 
 **Run:** 2026-08-21, autonomous long run
 **Terminal:** PINK · **Reviewer:** Ivan, then Adam
-**Board fingerprint at hand-off:** `5506f0b16194b4ec` · 76 cards · 3/8 gates
+**Board fingerprint at hand-off:** `5506f0b16194b4ec` · 76 cards · 3/8 gates (superseded — see W3-BATCH-REVIEW.md for current state)
 
 Eight PRs merged (#23–#30), all green on `typecheck` + `lint` + `build`.
 Five cards **shipped on merge** (non-visual). Two are **`in_flight` awaiting your
@@ -14,25 +14,28 @@ you only read two sections.
 
 ---
 
-## 0. Read this first: three things need you before anything else works
+## 0. Read this first — ALL APPLIED 2026-08-21
 
-| # | What | Why it blocks |
+Everything this section originally asked for is done. Kept as the record of what
+was applied and in what order.
+
+| file | what | status |
 |---|---|---|
-| 1 | **Apply migration `0005`** (merchant product soft delete) | Unlike 0003 and 0004, the deployed code **does not work against the old schema**. Eight reads filter a column that would not exist, which takes `/products`, `/catalog` and the dashboard down with them. |
-| 2 | **Two Supabase dashboard settings** for password recovery | The flow builds, renders and validates, but the email never arrives. See §3. |
-| 3 | **Apply `0004` and `0006`** | Both safe, both independent of any deploy. `0006` must go **after** the Stripe deploy, not before. |
+| `0004_labels_bucket_limits.sql` | 10 MB size limit + MIME allowlist on the `labels` bucket | ☑ applied |
+| `0005_merchant_products_soft_delete.sql` | `deleted_at` column + partial index | ☑ applied — the one the deployed code could not run without |
+| `0006_drop_stripe_columns.sql` | drops the two abandoned Stripe columns | ☑ applied, **after** the endpoint and vars were removed |
 
-Migrations authored this wave, none applied — PINK never applies one:
+**The Stripe ordering held.** Endpoint deleted and the five `STRIPE_*` vars
+removed from Vercel *before* `0006`. Dropping the columns first would have left a
+live endpoint writing to columns that no longer existed — a quiet decommission
+turned into `42703` on every event Stripe still sent.
 
-| file | what | when to apply |
-|---|---|---|
-| `0004_labels_bucket_limits.sql` | 10 MB size limit + MIME allowlist on the `labels` bucket | any time; new uploads only |
-| `0005_merchant_products_soft_delete.sql` | `deleted_at` column + partial index | **before or with** the merge of #26 |
-| `0006_drop_stripe_columns.sql` | drops the two abandoned Stripe columns | **after** the Stripe deploy |
-
-`0006` is the one migration in this series that is **not cleanly reversible** —
-re-adding the columns is one statement but the values are gone. It carries a
-snapshot query to run first.
+**Password recovery is functional.** The Supabase Redirect URL allowlist is
+configured. The Spanish email template is **not** installed and could not be:
+Supabase now requires custom SMTP before any auth template can be edited, and
+that is gated behind Adam verifying `lablld.com` in Resend DNS. So recovery works
+today but its email arrives in **English**. Tracked on
+`CHORE-spanish-auth-emails`; it does not block `FEAT-password-recovery` shipping.
 
 ---
 
