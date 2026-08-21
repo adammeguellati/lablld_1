@@ -1,6 +1,6 @@
 # LABLLD CI. Job ids are the check names Ivan types into branch protection:
-# typecheck, lint, build. Renaming a job renames its required check and
-# silently stops enforcing it, so these three ids must not drift.
+# typecheck, lint, build, e2e. Renaming a job renames its required check and
+# silently stops enforcing it, so these four ids must not drift.
 name: CI
 
 on:
@@ -52,7 +52,6 @@ jobs:
       SUPABASE_SECRET_KEY: 'placeholder-secret-key'
       NEXT_PUBLIC_APP_URL: 'https://placeholder.invalid'
       NEXT_PUBLIC_WOMPI_PUBLIC_KEY: 'pub_test_placeholder'
-      NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: 'pk_test_placeholder'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -61,3 +60,35 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
+
+  # Smoke suite. Playwright supplies its own placeholder env from
+  # playwright.config.ts and builds the app itself, so this job needs no env
+  # block: adding one here would create a second copy of those values that can
+  # drift from the config the suite actually uses.
+  #
+  # It reaches NO real service. The Supabase host does not resolve, which is
+  # what one of the tests depends on — see the header of e2e/smoke.spec.ts for
+  # what that lets the suite assert and what it deliberately cannot.
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      # Chromium only. A smoke suite gains little from three engines and pays
+      # for each one in install time on every run.
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test
+      - uses: actions/upload-artifact@v4
+        # Traces and screenshots exist only on failure, and are the first thing
+        # to read before guessing at a cause.
+        if: failure()
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7

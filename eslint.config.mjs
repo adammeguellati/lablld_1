@@ -19,6 +19,9 @@ const eslintConfig = defineConfig([
     // Untracked design bundle: absent in CI, so linting it locally only makes
     // local disagree with CI. Tracked by CHORE-design-bundle-location.
     "design_handoff_lablld_dashboard/**",
+    // Playwright output. Generated on failure, never committed.
+    "playwright-report/**",
+    "test-results/**",
   ]),
   // CLAUDE.md forbids console.* and, until now, nothing enforced it — the rule
   // lived in a document, which is the same shape of problem as a limit that

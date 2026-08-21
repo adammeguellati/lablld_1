@@ -4,8 +4,16 @@ import { safeServerClient, safeAdminClient } from '@/lib/supabase/safe'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import { isAdmin } from '@/lib/utils'
+import { reportOpsFailure } from '@/lib/ops-report'
 
 const CONFIG_ERROR = 'El servicio no está disponible en este momento. Intenta de nuevo más tarde.'
+
+// Node and undici phrase these, not Supabase, so none of them is ever a message
+// worth showing. Lowercased at the comparison site.
+const TRANSPORT_FAILURES = [
+  'fetch failed', 'econnrefused', 'enotfound', 'eai_again', 'econnreset',
+  'etimedout', 'socket hang up', 'network error', 'certificate',
+]
 
 function translateAuthError(msg: string): string {
   if (msg.includes('sending confirmation email')) return 'Error al enviar el correo de confirmación. Intenta de nuevo.'
@@ -18,6 +26,14 @@ function translateAuthError(msg: string): string {
   if (msg.includes('New password should be different')) return 'La nueva contraseña debe ser distinta de la anterior.'
   if (msg.includes('Auth session missing')) return 'Tu enlace expiró. Pide uno nuevo para continuar.'
   if (msg.includes('Invalid path specified in request URL')) return CONFIG_ERROR
+  // TRANSPORT failures never reached a translation, so a merchant saw Node's own
+  // English — "fetch failed" — inside a Spanish error box. Found by the e2e
+  // smoke suite on its first run against a Supabase host that does not resolve.
+  //
+  // Matched narrowly on purpose. The raw fallback below is deliberate and must
+  // keep working, so this catches only the transport layer rather than becoming
+  // the generic catch-all that fallback exists to avoid.
+  if (TRANSPORT_FAILURES.some((t) => msg.toLowerCase().includes(t))) return CONFIG_ERROR
   // Unknown messages pass through: signup gating is configured in Supabase Auth
   // and its message arrives here, so a generic fallback would swallow it.
   return msg
@@ -137,7 +153,12 @@ export async function loginAction(
   if (!supabase) return { error: CONFIG_ERROR }
 
   const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-  if (error) return { error: translateAuthError(error.message) }
+  if (error) {
+    const shown = translateAuthError(error.message)
+    // Only when the copy hides the cause. A wrong password is not an incident.
+    if (shown === CONFIG_ERROR) reportOpsFailure('auth.config', { action: 'login', message: error.message })
+    return { error: shown }
+  }
 
   if (isAdmin(data.user?.email ?? '')) redirect('/admin/dashboard')
 

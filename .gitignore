@@ -55,3 +55,8 @@ design_handoff_lablld_dashboard/
 # done. .claude/settings.json (shared, if it ever exists) is deliberately not
 # ignored.
 .claude/settings.local.json
+
+# Playwright output. Traces and screenshots are produced on failure only.
+/playwright-report/
+/test-results/
+/blob-report/

@@ -1256,16 +1256,20 @@
     {
       "id": "BACKLOG-e2e-smoke",
       "title": "Playwright smoke coverage on every PR: login, catalog, and the admin orders list, as a fourth required check once it is real",
-      "lane": "loose_ends",
-      "home_lane": "loose_ends",
+      "lane": "shipped",
+      "home_lane": "in_flight",
       "priority": "medium",
-      "status": "todo",
+      "status": "shipped",
       "owner_terminal": "unassigned",
       "gate": "green_self_merge",
-      "evidence": null,
+      "evidence": {
+        "kind": "pr",
+        "ref": "#47",
+        "at": "2026-08-21"
+      },
       "blocked_on": null,
       "last_checkpoint": "2026-08-21",
-      "notes": "Split out of INFRA-ci-and-tests by Ivan on 2026-08-20, with the reasoning recorded because it is the point: zero tests exist, and an empty e2e job would be a FAKE CHECK. A required check that asserts nothing is worse than no check, because it reads as coverage. SCOPE when built: Playwright, running on pull_request, covering login, catalog, and the admin orders list. It becomes a fourth branch-protection check only once it genuinely fails when the app breaks. DEPENDS ON: a seeded, non-production target to run against. It must not point at production; no LABLLD terminal has production access and that is permanent doctrine as of 2026-08-20. ALREADY AVAILABLE TO IT: two verification probes were written and passed during W0 but are NOT committed, because this card's runner does not exist yet. First, the fulfillment HMAC boundary (6 cases plus a negative arm that removes the guard and requires the forged request to be accepted) written for SEC-shopify-fulfillment-endpoint. Second, isAdmin fail-open coverage written for SEC-admin-layout-gate. Both should be committed as unit tests when a runner lands; they are the closest thing this repo has to the disable-the-property standard in BOARD-SPEC.md. NOT BUILT IN W4, and it is the ONLY green_self_merge card left unbuilt. The reason is narrow and it is not scope: Playwright is a new dependency, and a new third-party dependency is asked for rather than added. Everything else about the card is ready — CI has the three jobs to hang a fourth beside, the app builds with placeholder env, and the three flows it names (login, catalog, admin orders list) are all stable now. ONE WORD FROM IVAN UNBLOCKS IT. Recorded in section 9.3 of the W4 packet as the shortest path to more executable work."
+      "notes": "Split out of INFRA-ci-and-tests by Ivan on 2026-08-20, with the reasoning recorded because it is the point: zero tests exist, and an empty e2e job would be a FAKE CHECK. A required check that asserts nothing is worse than no check, because it reads as coverage. SCOPE when built: Playwright, running on pull_request, covering login, catalog, and the admin orders list. It becomes a fourth branch-protection check only once it genuinely fails when the app breaks. DEPENDS ON: a seeded, non-production target to run against. It must not point at production; no LABLLD terminal has production access and that is permanent doctrine as of 2026-08-20. ALREADY AVAILABLE TO IT: two verification probes were written and passed during W0 but are NOT committed, because this card's runner does not exist yet. First, the fulfillment HMAC boundary (6 cases plus a negative arm that removes the guard and requires the forged request to be accepted) written for SEC-shopify-fulfillment-endpoint. Second, isAdmin fail-open coverage written for SEC-admin-layout-gate. Both should be committed as unit tests when a runner lands; they are the closest thing this repo has to the disable-the-property standard in BOARD-SPEC.md. NOT BUILT IN W4, and it is the ONLY green_self_merge card left unbuilt. The reason is narrow and it is not scope: Playwright is a new dependency, and a new third-party dependency is asked for rather than added. Everything else about the card is ready — CI has the three jobs to hang a fourth beside, the app builds with placeholder env, and the three flows it names (login, catalog, admin orders list) are all stable now. ONE WORD FROM IVAN UNBLOCKS IT. Recorded in section 9.3 of the W4 packet as the shortest path to more executable work. SHIPPED 2026-08-21 in PR #47 on Ivan’s approval of Playwright. Non-visual, ships on merge. 18 tests, 8 seconds, chromium only. THE CI JOB IS NAMED EXACTLY \"e2e\", beside typecheck, lint and build. Those ids ARE the branch-protection check names, so the four must not drift. SCOPE, HONESTLY: the dispatch asked for login on both provisioned accounts, catalogue rendering products, and the admin orders list rendering — AND for the suite never to touch a real service. Those two requirements are in tension and the constraint wins, because with placeholder env there is no auth backend, therefore no session, therefore no logged-in page to assert on. SO EVERY TEST IS ONE OF TWO KINDS: a page that renders without a session, or a route that correctly REFUSES without one. Between them they exercise proxy.ts, both route groups, all four auth screens and the server actions’ failure path. THE NEGATIVE CASE IS THE BULK OF IT and it is stronger than the one route the dispatch asked for: all five merchant protected routes, all five admin ones, and / all redirect to /login. Plus /reset-password without a recovery session must render the EXPIRED state and must NOT render the form — if that ever regressed, the only thing between an anonymous visitor and a password change would be the server action’s own guard. THE SUITE FOUND A REAL DEFECT ON ITS FIRST RUN, before it had a CI job to run in: see CODE-auth-transport-error-copy. That is the argument for the card in one line. NEGATIVE ARM ON THE SUITE ITSELF, which is the thing that distinguishes a test from a sentence: the transport fix was REMOVED and the Spanish-failure test went red at the exact assertion; restoring it returned all 18 to green. A smoke suite nobody has watched fail is a suite nobody knows works. RETRIES ARE ZERO ON PURPOSE. A smoke suite that passes on the second attempt is reporting a flake as a success, and a flake here means the app is slow to boot or the assertion is racy — both worth seeing. NOT COVERED, and it needs a reachable Supabase rather than more tests: a successful login for either account, the catalogue rendering products, and the admin orders list rendering rows. Tracked on BACKLOG-e2e-authenticated."
     },
     {
       "id": "VERIFY-shopify-e2e",
@@ -1552,6 +1556,38 @@
       "last_checkpoint": "2026-08-21",
       "evidence": null,
       "notes": "Created 2026-08-21 from INFRA-billing-alerting, which shipped everything that did not need a vendor. This is the half that does, and it is an adam_authorizes card because a new third-party vendor is a spend and an account, not a code change. WHAT ALREADY WORKS WITHOUT IT: the billing cron returns a non-200 on a failed run, so Vercel’s own cron monitoring flags it, and every failure writes structured JSON through lib/ops-report.ts, which Vercel retains as function logs. WHAT IS STILL MISSING, and it is worth being precise rather than alarming: nothing AGGREGATES (one merchant failing looks the same as forty), nothing ALERTS unprompted (someone has to open the dashboard), and log retention on the current plan is short — which ties this to INFRA-vercel-pro. THE WORK IS SMALL WHEN THE DECISION IS MADE: every call site already routes through one function in one file, so pointing it at a reporter is an edit to lib/ops-report.ts and nothing else. That was the reason for building the seam first. WORTH DECIDING TOGETHER WITH INFRA-vercel-pro, since log retention is the same purchase question wearing a different hat."
+    },
+    {
+      "id": "CODE-auth-transport-error-copy",
+      "title": "A login against an unreachable Supabase showed the merchant Node’s own English — \"fetch failed\" — inside a Spanish error box",
+      "lane": "shipped",
+      "home_lane": "in_flight",
+      "status": "shipped",
+      "priority": "medium",
+      "owner_terminal": "pink",
+      "gate": "green_self_merge",
+      "blocked_on": null,
+      "last_checkpoint": "2026-08-21",
+      "evidence": {
+        "kind": "pr",
+        "ref": "#47",
+        "at": "2026-08-21"
+      },
+      "notes": "FOUND 2026-08-21 by the e2e smoke suite on its first run, before that suite had a CI job to run in. SHIPPED the same day in PR #47. WHAT HAPPENED: translateAuthError ends in a deliberate raw fallback, because Supabase Auth’s signup-gating message arrives through it and a generic catch-all would swallow the one message that must reach the screen. Transport failures fell through that same fallback, so a merchant saw \"fetch failed\" — undici’s phrasing, in English, in a product that is Spanish everywhere else. WHY IT SURVIVED THIS LONG: it only appears when Supabase is unreachable, which never happens in normal use and is exactly the state placeholder env creates. Nobody had run the app against a host that does not resolve and then read the screen. THE FIX IS NARROW ON PURPOSE: a small list of transport-level phrases (fetch failed, ECONNREFUSED, ENOTFOUND, EAI_AGAIN, ECONNRESET, ETIMEDOUT, socket hang up, network error, certificate) maps to the existing CONFIG_ERROR copy. The raw fallback still works for everything else, so signup gating is untouched. THE CAUSE IS NOT LOST, it moves: when the copy hides it, the login path reports through lib/ops-report.ts, so the operator gets `{\"scope\":\"auth.config\",\"action\":\"login\",\"message\":\"fetch failed\"}` while the merchant gets Spanish. Visible in the suite’s own output. GUARDED FOREVER by the smoke test \"login against an unreachable backend fails closed, in Spanish\", which asserts BOTH that the Spanish message appears and that the string \"fetch failed\" appears nowhere on the page."
+    },
+    {
+      "id": "BACKLOG-e2e-authenticated",
+      "title": "Extend the smoke suite past the sign-in wall: a real login for both accounts, catalogue rendering products, admin orders rendering rows. Needs a reachable Supabase in CI",
+      "lane": "loose_ends",
+      "home_lane": "loose_ends",
+      "status": "todo",
+      "priority": "medium",
+      "owner_terminal": "ivan",
+      "gate": "ivan_merge",
+      "blocked_on": null,
+      "last_checkpoint": "2026-08-21",
+      "evidence": null,
+      "notes": "P2 · Created 2026-08-21 from BACKLOG-e2e-smoke, which shipped everything achievable without a backend. This is the half that is not achievable without one, carded rather than left as a gap in a test file nobody re-reads. WHY IT CANNOT BE DONE IN THE EXISTING SUITE: the standing constraint is placeholder env and no real service. No auth backend means no session, and the proxy checks the session SERVER-side — so it cannot be faked from the browser either. Playwright can intercept browser requests; it cannot intercept a fetch the Node server makes to itself. THREE WAYS TO UNBLOCK IT, in rising cost. ONE, the Supabase CLI in CI: a local Postgres and auth in Docker, seeded per run. Real, disposable, touches nothing shared, but adds Docker to every CI run and roughly a minute to it. TWO, a dedicated Supabase TEST project with two seeded accounts and its keys in GitHub secrets — cheap and fast, but it is a real service and it drifts from prod schema unless migrations are applied to it too. THREE, drop the constraint and point at a staging deploy, which is the option to avoid: it makes CI able to write to something someone might mistake for real. ONE IS THE RECOMMENDATION. It keeps \"never a real service\" true, which is the property the constraint exists to protect, and the seed can be supabase/seed.sql — the one already used for local setup. WHAT IT WOULD COVER once unblocked, and this is the value: a merchant login and an admin login landing on their own dashboards rather than each other’s, the catalogue rendering seeded products, the admin orders list rendering seeded rows, and the admin-vs-merchant boundary being enforced by something other than a redirect assertion."
     }
   ]
 }
