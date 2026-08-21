@@ -6,18 +6,18 @@ import Image from 'next/image'
 import { MoreVertical } from 'lucide-react'
 import { formatCOP } from '@/lib/utils'
 import { toggleMerchantProductAction } from '@/app/(merchant)/products/actions'
-import type { LabelStatus, MerchantProduct, Product } from '@/types'
+import type { LabelStatus, MerchantProduct, Product, ProductCategory } from '@/types'
 
 export type MyProductRow = MerchantProduct & { product: Product | null }
 
-const CATEGORY_LABELS: Record<string, string> = {
+// Keyed on ProductCategory, not string: the beauty / skincare arms that used to
+// sit here were keyed on values the enum cannot hold, so they could never run.
+const CATEGORY_LABELS: Record<ProductCategory, string> = {
   supplements: 'Suplementos', cosmeticos: 'Cosméticos', cafe: 'Café',
-  beauty: 'Cosméticos', skincare: 'Cosméticos',
 }
 
-const CATEGORY_DOTS: Record<string, string> = {
+const CATEGORY_DOTS: Record<ProductCategory, string> = {
   supplements: '#8FC79A', cosmeticos: '#E4A0B7', cafe: '#D9B27C',
-  beauty: '#E4A0B7', skincare: '#E4A0B7',
 }
 
 const STATUS: Record<LabelStatus, { label: string; cls: string }> = {
@@ -68,8 +68,8 @@ export function MyProductCard({ row }: { row: MyProductRow }) {
               ellipsize and the status chip can never be pushed off or overlapped. */}
           <div className="absolute left-3 right-3 top-3 z-[2] flex items-center justify-between gap-2">
             <span className="flex min-w-0 items-center gap-1.5 rounded-[5px] bg-white/92 px-2 py-1 text-[11.5px] font-medium text-[#1D1E20]">
-              <span className="h-1.5 w-1.5 flex-none rounded-full" style={{ background: CATEGORY_DOTS[product?.category ?? ''] ?? '#AEAEB2' }} />
-              <span className="truncate">{CATEGORY_LABELS[product?.category ?? ''] ?? product?.category ?? '—'}</span>
+              <span className="h-1.5 w-1.5 flex-none rounded-full" style={{ background: (product && CATEGORY_DOTS[product.category]) ?? '#AEAEB2' }} />
+              <span className="truncate">{(product && CATEGORY_LABELS[product.category]) ?? '—'}</span>
             </span>
             <span className={`flex-none whitespace-nowrap rounded-[5px] px-2.5 py-1 text-[11.5px] font-medium ${paused ? 'bg-white/92 text-[#86868B]' : status.cls}`}>
               {paused ? 'Pausado' : status.label}

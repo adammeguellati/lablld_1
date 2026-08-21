@@ -2,26 +2,23 @@
 
 import Link from 'next/link'
 import { formatCOP, calculateMerchantPrice } from '@/lib/utils'
-import type { Product, Plan } from '@/types'
+import type { Product, Plan, ProductCategory } from '@/types'
 
 const FORMAT_LABELS: Record<string, string> = {
   capsule: 'Cápsula', powder: 'Polvo', serum: 'Sérum', oil: 'Aceite',
   gummy: 'Gomita', liquid: 'Líquido', cream: 'Crema', solid: 'Sólido',
 }
 
-// Three categories, from the ProductCategory enum. The design names a fourth,
-// Cuidado personal, which is not built: SCREENS.md dot colours are mapped onto
-// the enum the code actually has. Note that `cosmeticos` is already labelled
-// "Cosméticos & Cuidado Personal" here, so the design splits one existing label
-// rather than introducing an unrepresented product line.
-const CATEGORY_LABELS: Record<string, string> = {
+// Three categories, and three is the answer: Adam ruled on 2026-08-21 that the
+// design's fourth, Cuidado personal, is not a product line. Keyed on
+// ProductCategory rather than string so a value the enum cannot hold is a
+// compile error instead of a branch that silently never runs.
+const CATEGORY_LABELS: Record<ProductCategory, string> = {
   supplements: 'Suplementos', cosmeticos: 'Cosméticos', cafe: 'Café',
-  beauty: 'Cosméticos', skincare: 'Cosméticos',
 }
 
-const CATEGORY_DOTS: Record<string, string> = {
+const CATEGORY_DOTS: Record<ProductCategory, string> = {
   supplements: '#8FC79A', cosmeticos: '#E4A0B7', cafe: '#D9B27C',
-  beauty: '#E4A0B7', skincare: '#E4A0B7',
 }
 
 interface Props {

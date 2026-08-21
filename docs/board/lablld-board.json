@@ -1242,16 +1242,20 @@
     {
       "id": "CHORE-remove-unreachable-category-branches",
       "title": "Remove the unreachable beauty / skincare category branches left behind by the three-value ProductCategory enum",
-      "lane": "in_flight",
+      "lane": "shipped",
       "home_lane": "in_flight",
-      "status": "todo",
+      "status": "shipped",
       "priority": "low",
       "owner_terminal": "pink",
       "gate": "green_self_merge",
       "blocked_on": null,
       "last_checkpoint": "2026-08-21",
-      "evidence": null,
-      "notes": "P3 · Created 2026-08-21 on Adam’s categories ruling (PROD-category-taxonomy): three categories stand, so any branch keyed on a fourth is dead code that can never execute. Scope is deletion only, no behaviour change: find every switch/map/conditional keyed on a category value the ProductCategory enum cannot hold, and delete the unreachable arm. Re-derive the actual dead branches from live code before editing — this note names the shape of the work, not the file list. W2 scope, last in the run order because it is pure hygiene."
+      "evidence": {
+        "kind": "pr",
+        "ref": "#30",
+        "at": "2026-08-21"
+      },
+      "notes": "P3 · Created 2026-08-21 on Adam’s categories ruling (PROD-category-taxonomy): three categories stand, so any branch keyed on a fourth is dead code that can never execute. Scope is deletion only, no behaviour change: find every switch/map/conditional keyed on a category value the ProductCategory enum cannot hold, and delete the unreachable arm. Re-derive the actual dead branches from live code before editing — this note names the shape of the work, not the file list. W2 scope, last in the run order because it is pure hygiene. SHIPPED 2026-08-21 in PR #30. Non-visual — no rendered output changes, because the deleted arms could never render — so it ships on merge. WHAT THE DEAD BRANCHES ACTUALLY WERE: four lookup maps, CATEGORY_LABELS and CATEGORY_DOTS in both product-card.tsx and my-product-card.tsx, each carrying beauty and skincare keys alongside the three real ones. Both the Postgres enum product_category and the zod schemas on the two admin product routes admit only supplements, cosmeticos and cafe, so no product could ever carry those values and those eight entries could never be reached. THE FIX IS THE TYPE, NOT THE DELETION: the maps were Record<string, string>, which is what allowed a key the enum cannot hold to be written in the first place. They are now Record<ProductCategory, string>, so the same mistake is a compile error rather than a branch that silently never runs. The empty-string fallbacks in my-product-card.tsx went with them — they existed only to let a null product index a string-keyed map, and are meaningless once the key is typed. NEGATIVE ARM, proven by hand at authoring time since there is no CI to hang it on: re-adding a beauty key to CATEGORY_LABELS makes tsc fail with TS2353, \"beauty does not exist in type Record<ProductCategory, string>\". Removing it again returns the tree to green. Without that check the tightened type would be an assertion nobody had tested."
     },
     {
       "id": "UI-stepper-step-counter",
