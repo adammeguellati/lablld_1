@@ -9,9 +9,19 @@ const FORMAT_LABELS: Record<string, string> = {
   gummy: 'Gomita', liquid: 'Líquido', cream: 'Crema', solid: 'Sólido',
 }
 
+// Three categories, from the ProductCategory enum. The design names a fourth,
+// Cuidado personal, which is not built: SCREENS.md dot colours are mapped onto
+// the enum the code actually has. Note that `cosmeticos` is already labelled
+// "Cosméticos & Cuidado Personal" here, so the design splits one existing label
+// rather than introducing an unrepresented product line.
 const CATEGORY_LABELS: Record<string, string> = {
   supplements: 'Suplementos', cosmeticos: 'Cosméticos', cafe: 'Café',
   beauty: 'Cosméticos', skincare: 'Cosméticos',
+}
+
+const CATEGORY_DOTS: Record<string, string> = {
+  supplements: '#8FC79A', cosmeticos: '#E4A0B7', cafe: '#D9B27C',
+  beauty: '#E4A0B7', skincare: '#E4A0B7',
 }
 
 interface Props {
@@ -23,61 +33,84 @@ interface Props {
 export function ProductCard({ product, configured, plan }: Props) {
   const slug = product.slug ?? product.id
   const image = product.images[0]
-  const showNew = product.is_new
   const base = product.price_cop ?? null
   const merchantPrice = base && plan ? calculateMerchantPrice(base, plan) : null
   const suggestedPrice = product.suggested_retail_price_cop ?? null
   const fmt = (v: number) => formatCOP(Math.round(v))
+  const soldOut = product.stock === 0
+
+  // The status chip is whichever single state is true, so the row never grows a
+  // third element. Agotado outranks Nuevo: it changes what you can do.
+  const status = soldOut ? 'Agotado' : configured ? 'Agregado' : product.is_new ? 'Nuevo' : null
+  const statusClass = soldOut
+    ? 'bg-white/92 text-[#86868B]'
+    : configured
+      ? 'bg-[#E6F6EB] text-[#16A34A]'
+      : 'bg-[#1D1E20] text-white'
 
   return (
-    <Link
-      href={`/catalog/${slug}`}
-      className="group flex flex-col bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
-    >
-      <div className="relative aspect-square bg-gray-50 overflow-hidden">
+    <Link href={`/catalog/${slug}`} className="group flex flex-col">
+      <div className="relative aspect-[4/5] rounded-[5px] overflow-hidden bg-[#EDEDEF]">
         {image ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={image} alt={product.name} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.04]" />
+          <img
+            src={image}
+            alt={product.name}
+            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+          />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
-            <span className="text-xs text-gray-300 uppercase tracking-widest">Sin imagen</span>
+            <span className="text-[11px] text-[#AEAEB2] uppercase tracking-widest">Sin imagen</span>
           </div>
         )}
-        {showNew && (
-          <span className="absolute top-3 left-3 bg-gray-900 text-white text-[10px] font-medium px-2.5 py-1 rounded-full tracking-wide">Nuevo</span>
-        )}
-        {configured && (
-          <span className="absolute top-3 right-3 text-[10px] font-medium px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">Agregado</span>
-        )}
-        {product.stock === 0 && (
-          <span className="absolute bottom-3 left-3 bg-white/90 text-gray-500 text-[10px] font-medium px-2.5 py-1 rounded-full border border-gray-200">Agotado</span>
-        )}
+
+        {/* The collision-proof chip row: ONE absolutely positioned flex row
+            pinned to all three edges with space-between, so the category chip
+            can ellipsize into whatever room is left and the two can never
+            overlap however long the category label gets. */}
+        <div className="absolute top-3 left-3 right-3 z-[2] flex items-center justify-between gap-2">
+          <span className="min-w-0 flex items-center gap-1.5 rounded-[5px] bg-white/92 px-2 py-1 text-[11.5px] font-medium text-[#1D1E20] backdrop-blur-sm">
+            <span
+              className="h-1.5 w-1.5 flex-none rounded-full"
+              style={{ background: CATEGORY_DOTS[product.category] ?? '#AEAEB2' }}
+            />
+            <span className="truncate">{CATEGORY_LABELS[product.category] ?? product.category}</span>
+          </span>
+          {status && (
+            <span className={`flex-none whitespace-nowrap rounded-[5px] px-2.5 py-1 text-[11.5px] font-medium ${statusClass}`}>
+              {status}
+            </span>
+          )}
+        </div>
       </div>
 
-      <div className="p-4 flex flex-col gap-1">
-        <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wider">
-          {CATEGORY_LABELS[product.category] ?? product.category}
-          {product.format && ` · ${FORMAT_LABELS[product.format] ?? product.format}`}
-        </p>
-        <h3 className="text-sm font-semibold text-gray-900 leading-snug line-clamp-2 group-hover:text-gray-600 transition-colors">
-          {product.name}
-        </h3>
+      <div className="flex flex-1 flex-col pt-3.5">
+        <p className="text-[15px] font-medium leading-[1.38] text-[#1D1E20] text-pretty">{product.name}</p>
+        {product.format && (
+          <p className="mt-1 text-[13px] font-medium text-[#86868B]">
+            {FORMAT_LABELS[product.format] ?? product.format}
+          </p>
+        )}
+
+        <div className="min-h-3 flex-1" />
 
         {merchantPrice !== null ? (
-          <div className="mt-2 pt-2.5 border-t border-gray-50 space-y-1">
-            <div className="flex justify-between items-baseline">
-              <span className="text-[10px] text-gray-400">Costo del Producto</span>
-              <span className="text-xs text-gray-600">{fmt(merchantPrice)}</span>
+          <div className="flex flex-col gap-0.5 pt-2.5">
+            <div className="flex items-baseline justify-between gap-2">
+              <span className="text-[12.5px] text-[#86868B]">Costo del producto</span>
+              <span className="text-[14.5px] text-[#1D1E20]">{fmt(merchantPrice)}</span>
             </div>
             {suggestedPrice !== null && (
-              <div className="flex justify-between items-baseline">
-                <span className="text-[10px] text-gray-400">Precio sugerido</span>
-                <span className="text-xs font-semibold text-gray-900">{fmt(suggestedPrice)}</span>
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="text-[12.5px] text-[#86868B]">Precio sugerido</span>
+                <span className="text-[14.5px] font-medium text-[#1D1E20]">{fmt(suggestedPrice)}</span>
               </div>
             )}
           </div>
         ) : !plan ? (
-          <span className="text-xs text-gray-400 mt-1.5">Ver precio →</span>
+          <span className="pt-2.5 text-[13px] font-medium text-[#6E6E73] group-hover:text-[#1D1E20] transition-colors">
+            Ver precio →
+          </span>
         ) : null}
       </div>
     </Link>
