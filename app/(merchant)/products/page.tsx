@@ -1,9 +1,9 @@
 import { Suspense } from 'react'
 import Link from 'next/link'
+import { Plus } from 'lucide-react'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { LinkButton } from '@/components/shared/link-button'
 import { MyProductCard } from '@/components/merchant/my-product-card'
 import { MerchantProductsFilters } from '@/components/merchant/merchant-products-filters'
 import type { MerchantProduct, Product } from '@/types'
@@ -40,40 +40,49 @@ export default async function ProductsPage({ searchParams }: PageProps) {
 
   return (
     <div>
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-8">
-        <div>
-          <h1 className="text-2xl font-heading font-normal tracking-[0]">Mis Productos</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Gestiona y personaliza tus productos</p>
-        </div>
-        <LinkButton href="/catalog" variant="outline" className="rounded-xl text-sm">
-          Explorar catálogo →
-        </LinkButton>
+      <div className="flex flex-wrap items-start justify-between gap-6">
+        <h1 className="text-[36px] font-normal leading-[1.12] tracking-[0]">Mis Productos</h1>
+        <Link
+          href="/catalog"
+          className="flex flex-none items-center gap-2.5 rounded-[15px] bg-[#1D1E20] px-6 py-3 text-[15px] font-medium text-white transition-colors hover:bg-[#F97316]"
+        >
+          <Plus className="h-[17px] w-[17px]" strokeWidth={2} />
+          Crear producto
+        </Link>
       </div>
 
-      <Suspense fallback={null}>
-        <MerchantProductsFilters />
-      </Suspense>
+      <div className="mt-[18px] rounded-[22px] border border-black/[.08] bg-white p-[22px] shadow-[0_1px_2px_rgba(0,0,0,.03)]">
+        <Suspense fallback={null}>
+          <MerchantProductsFilters />
+        </Suspense>
 
-      {rows.length === 0 ? (
-        <div className="text-center py-24 space-y-2">
-          <p className="text-sm text-gray-400">
-            {params.q || params.status
-              ? 'No hay productos que coincidan.'
-              : 'Aún no has agregado ningún producto.'}
-          </p>
-          {!params.q && !params.status && (
-            <Link href="/catalog" className="text-sm text-gray-600 underline hover:text-gray-900 transition-colors">
-              Explorar catálogo →
-            </Link>
-          )}
+        <div className="my-[26px] mb-3.5 flex items-baseline justify-between gap-4">
+          <span className="text-[15px] font-medium text-[#6E6E73]">
+            {rows.length === 1 ? '1 producto' : `${rows.length} productos`}
+          </span>
         </div>
-      ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
-          {rows.map((row) => (
-            <MyProductCard key={row.id} row={row} />
-          ))}
-        </div>
-      )}
+
+        {rows.length === 0 ? (
+          <div className="rounded-[14px] border border-black/[.08] bg-white px-5 py-16 text-center">
+            <p className="text-[15px] font-medium text-[#1D1E20]">
+              {params.q || params.status
+                ? 'No hay productos que coincidan.'
+                : 'Aún no has agregado ningún producto.'}
+            </p>
+            {!params.q && !params.status && (
+              <Link href="/catalog" className="mt-1.5 inline-block text-[14px] text-[#6E6E73] underline transition-colors hover:text-[#1D1E20]">
+                Explorar catálogo →
+              </Link>
+            )}
+          </div>
+        ) : (
+          <div className="grid gap-5 [grid-template-columns:repeat(auto-fill,minmax(280px,1fr))] lg:[grid-template-columns:repeat(3,minmax(0,1fr))]">
+            {rows.map((row) => (
+              <MyProductCard key={row.id} row={row} />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
