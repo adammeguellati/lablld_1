@@ -4,7 +4,6 @@ import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { formatCOP } from '@/lib/utils'
-import { LinkButton } from '@/components/shared/link-button'
 import { DashboardSteps } from '@/components/merchant/dashboard-steps'
 
 interface BannerItem { image_url: string; link_url: string }
@@ -54,95 +53,130 @@ export default async function DashboardPage() {
   const learn   = settings?.learn   ?? [{ image_url: '', link_url: '#' }, { image_url: '', link_url: '#' }, { image_url: '', link_url: '#' }]
   const orderUrl = settings?.order_button_url ?? '/catalog'
 
+  const alerts = [
+    !merchant?.plan && {
+      tone: 'warn' as const,
+      title: 'Activa tu suscripción para comenzar',
+      body: 'Suscríbete a LABLLD para crear productos, gestionar pedidos y utilizar nuestros servicios de fulfillment.',
+      href: '/onboarding/plan',
+      cta: 'Activar suscripción →',
+    },
+    isPastDue && {
+      tone: 'stop' as const,
+      title: 'Tu suscripción ha vencido',
+      body: 'Renueva tu plan para seguir accediendo a todas las funciones.',
+      href: '/settings/billing',
+      cta: 'Renovar ahora →',
+    },
+    pendingOrders.length > 0 && {
+      tone: 'warn' as const,
+      title: pendingOrders.length === 1 ? '1 orden pendiente de pago' : `${pendingOrders.length} órdenes pendientes de pago`,
+      body: 'Realiza el pago para que LABLLD procese tu pedido.',
+      href: '/orders',
+      cta: 'Ver órdenes →',
+    },
+  ].filter(Boolean) as { tone: 'warn' | 'stop'; title: string; body: string; href: string; cta: string }[]
+
   return (
-    <div className="space-y-8">
-      {!merchant?.plan && (
-        <div className="rounded-xl bg-amber-50 border border-amber-200 px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <p className="font-semibold text-amber-800 text-sm">Activa tu suscripción para comenzar</p>
-            <p className="text-xs text-amber-600 mt-0.5">Suscríbete a LABLLD para crear productos, gestionar pedidos y utilizar nuestros servicios de fulfillment.</p>
-          </div>
-          <Link href="/onboarding/plan" className="shrink-0 text-xs font-semibold bg-amber-700 text-white rounded-full px-4 py-2 hover:bg-amber-800 transition-colors">
-            Activar suscripción →
-          </Link>
+    <div>
+      {alerts.length > 0 && (
+        <div className="mb-[22px] flex flex-col gap-2.5">
+          {alerts.map((a) => (
+            <div
+              key={a.title}
+              className={`flex flex-col justify-between gap-3 rounded-[14px] border px-5 py-4 sm:flex-row sm:items-center ${
+                a.tone === 'stop'
+                  ? 'border-[#C0303B]/[.14] bg-[#FBE9E6]'
+                  : 'border-[#B4690E]/[.14] bg-[#FDEFE0]'
+              }`}
+            >
+              <div>
+                <p className={`text-[15px] font-medium ${a.tone === 'stop' ? 'text-[#C0303B]' : 'text-[#B4690E]'}`}>{a.title}</p>
+                <p className="mt-0.5 text-[13.5px] text-[#6E6E73]">{a.body}</p>
+              </div>
+              <Link
+                href={a.href}
+                className={`flex-none rounded-full px-4 py-2 text-[13px] font-medium text-white transition-opacity hover:opacity-90 ${
+                  a.tone === 'stop' ? 'bg-[#C0303B]' : 'bg-[#B4690E]'
+                }`}
+              >
+                {a.cta}
+              </Link>
+            </div>
+          ))}
         </div>
       )}
-      {isPastDue && (
-        <div className="rounded-xl bg-red-50 border border-red-200 px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <p className="font-semibold text-red-800 text-sm">Tu suscripción ha vencido</p>
-            <p className="text-xs text-red-600 mt-0.5">Renueva tu plan para seguir accediendo a todas las funciones.</p>
-          </div>
-          <Link href="/settings/billing" className="shrink-0 text-xs font-semibold bg-red-700 text-white rounded-full px-4 py-2 hover:bg-red-800 transition-colors">
-            Renovar ahora →
-          </Link>
-        </div>
-      )}
-      {pendingOrders.length > 0 && (
-        <div className="rounded-xl bg-amber-50 border border-amber-200 px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <p className="font-semibold text-amber-800 text-sm">{pendingOrders.length === 1 ? '1 orden pendiente de pago' : `${pendingOrders.length} órdenes pendientes de pago`}</p>
-            <p className="text-xs text-amber-600 mt-0.5">Realiza el pago para que LABLLD procese tu pedido.</p>
-          </div>
-          <Link href="/orders" className="shrink-0 text-xs font-semibold bg-amber-700 text-white rounded-full px-4 py-2 hover:bg-amber-800 transition-colors">
-            Ver órdenes →
-          </Link>
-        </div>
-      )}
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+
+      <div className="flex flex-wrap items-start justify-between gap-6">
         <div>
-          <h1 className="text-[30px] leading-tight text-gray-900">¡Hola, {firstName}!</h1>
-          <p className="text-[16px] font-semibold text-[#595959] mt-1">Todo lo que necesita tu marca, en un solo lugar.</p>
+          <h1 className="text-[36px] font-normal leading-[1.12] tracking-[0]">¡Hola, {firstName}!</h1>
+          <p className="mt-1 text-[15px] text-[#6E6E73]">Todo lo que necesita tu marca, en un solo lugar.</p>
         </div>
-        <LinkButton href={orderUrl} variant="default"
-          className="shrink-0 h-10 px-5 text-[13px] font-semibold rounded-full bg-gray-900 hover:bg-gray-800 self-start">
-          Ordenar Productos
-        </LinkButton>
+        <Link
+          href={orderUrl}
+          className="flex flex-none items-center gap-2.5 rounded-[15px] bg-[#1D1E20] px-6 py-3 text-[15px] font-medium text-white transition-colors hover:bg-[#F97316]"
+        >
+          Ordenar productos
+        </Link>
       </div>
 
-      <div className="grid grid-cols-5 gap-3 h-56">
+      {/* Admin-configurable, from platform_settings.dashboard. Kept exactly as
+          it was fed; only the frame changed. */}
+      <div className="mt-[22px] grid h-56 grid-cols-5 gap-3.5">
         {banners.map((b, i) => (
-          <Link key={i} href={b.link_url || '#'} className={`relative rounded-2xl overflow-hidden bg-gray-100 hover:opacity-90 transition-opacity ${i === 0 ? 'col-span-3' : 'col-span-2'}`}>
-            {b.image_url
-              ? <Image src={b.image_url} alt="" fill className="object-cover" sizes={i === 0 ? '60vw' : '40vw'} />
-              : <div className="absolute inset-0 bg-gradient-to-br from-teal-200 via-cyan-300 to-sky-400 flex items-end p-4">
-                  <span className="text-white/70 text-xs font-semibold">imagen con enlace</span>
-                </div>
-            }
+          <Link
+            key={i}
+            href={b.link_url || '#'}
+            className={`relative overflow-hidden rounded-[5px] bg-[#EDEDEF] transition-opacity hover:opacity-90 ${i === 0 ? 'col-span-3' : 'col-span-2'}`}
+          >
+            {b.image_url ? (
+              <Image src={b.image_url} alt="" fill className="object-cover" sizes={i === 0 ? '60vw' : '40vw'} />
+            ) : (
+              <div className="absolute inset-0 flex items-end p-4">
+                <span className="text-[12px] font-medium text-[#AEAEB2]">Imagen con enlace</span>
+              </div>
+            )}
           </Link>
         ))}
       </div>
 
-      <div className="grid grid-cols-3 gap-px bg-gray-100 rounded-2xl overflow-hidden">
+      <div className="mt-3.5 grid grid-cols-1 gap-3.5 sm:grid-cols-3">
         {[
-          { label: 'INGRESOS TOTALES',  value: formatCOP(totalRevenue) },
-          { label: 'TOTAL ÓRDENES',     value: totalOrders.toString() },
-          { label: 'PRODUCTOS ACTIVOS', value: activeProducts.toString() },
-        ].map(({ label, value }) => (
-          <div key={label} className="bg-white px-6 py-6">
-            <p className="text-[11px] font-semibold text-[#595959] tracking-widest uppercase mb-3">{label}</p>
-            <p className="text-[32px] font-normal text-gray-900 leading-none font-heading tracking-[0]">{value}</p>
+          { label: 'Ingresos totales', value: formatCOP(totalRevenue), color: '#1D1E20' },
+          { label: 'Total órdenes', value: totalOrders.toString(), color: '#1D5EA8' },
+          { label: 'Productos activos', value: activeProducts.toString(), color: '#16A34A' },
+        ].map(({ label, value, color }) => (
+          <div key={label} className="flex h-[112px] flex-col justify-between rounded-[14px] border border-black/[.08] bg-white p-5">
+            <span className="text-[12px] text-[#86868B]">{label}</span>
+            <span className="self-end text-[32px] font-normal leading-none tracking-[-0.02em]" style={{ color }}>
+              {value}
+            </span>
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div>
-          <p className="text-[11px] font-semibold text-[#595959] tracking-widest uppercase mb-4">Tus próximos pasos</p>
+      <div className="mt-[22px] grid grid-cols-1 gap-3.5 lg:grid-cols-2">
+        <div className="rounded-[22px] border border-black/[.08] bg-white p-[22px] shadow-[0_1px_2px_rgba(0,0,0,.03)]">
+          <p className="mb-4 text-[15px] font-medium text-[#6E6E73]">Tus próximos pasos</p>
           <DashboardSteps hasLabel={hasLabel} hasShopify={hasShopify} hasPublished={hasPublished} />
         </div>
 
-        <div>
-          <p className="text-[11px] font-semibold text-[#595959] tracking-widest uppercase mb-4">Aprende</p>
-          <div className="grid grid-cols-3 gap-3">
+        <div className="rounded-[22px] border border-black/[.08] bg-white p-[22px] shadow-[0_1px_2px_rgba(0,0,0,.03)]">
+          <p className="mb-4 text-[15px] font-medium text-[#6E6E73]">Aprende</p>
+          <div className="grid grid-cols-3 gap-3.5">
             {learn.map((c, i) => (
-              <Link key={i} href={c.link_url || '#'} className="relative aspect-[3/4] rounded-2xl overflow-hidden bg-gray-100 hover:opacity-90 transition-opacity block">
-                {c.image_url
-                  ? <Image src={c.image_url} alt="" fill className="object-cover" sizes="20vw" />
-                  : <div className="absolute inset-0 bg-gray-200 flex items-end p-2">
-                      <span className="text-gray-400 text-[10px] font-semibold leading-tight">imagen con enlace</span>
-                    </div>
-                }
+              <Link
+                key={i}
+                href={c.link_url || '#'}
+                className="relative block aspect-[3/4] overflow-hidden rounded-[5px] bg-[#EDEDEF] transition-opacity hover:opacity-90"
+              >
+                {c.image_url ? (
+                  <Image src={c.image_url} alt="" fill className="object-cover" sizes="20vw" />
+                ) : (
+                  <div className="absolute inset-0 flex items-end p-2">
+                    <span className="text-[10.5px] font-medium leading-tight text-[#AEAEB2]">Imagen con enlace</span>
+                  </div>
+                )}
               </Link>
             ))}
           </div>
