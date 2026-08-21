@@ -13,6 +13,7 @@ import { ShippingRatesEditor, type RateInput } from '@/components/admin/shipping
 import { ProductImageUploader } from '@/components/admin/product-image-uploader'
 import { ThemeLabelsEditor } from '@/components/admin/theme-labels-editor'
 import type { Product, ProductCategory, Plan, SupplementFacts, BenefitBlock, ScienceFact, ShippingRate, ThemeLabel } from '@/types'
+import { CATEGORY_LABELS, CATEGORY_VALUES } from '@/lib/product-category'
 
 const FORMATS = [
   { value: 'capsule', label: 'Cápsula' }, { value: 'powder', label: 'Polvo' },
@@ -116,9 +117,9 @@ export function ProductEditForm({ product }: Props) {
             <Select value={category} onValueChange={(v) => setCategory((v ?? 'supplements') as ProductCategory)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="supplements">Suplementos Dietarios</SelectItem>
-                <SelectItem value="cosmeticos">Cosméticos & Cuidado Personal</SelectItem>
-                <SelectItem value="cafe">Café y Infusiones</SelectItem>
+                {CATEGORY_VALUES.map((v) => (
+                  <SelectItem key={v} value={v}>{CATEGORY_LABELS[v]}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </F>

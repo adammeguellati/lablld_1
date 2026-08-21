@@ -2,24 +2,17 @@
 
 import Link from 'next/link'
 import { formatCOP, calculateMerchantPrice } from '@/lib/utils'
-import type { Product, Plan, ProductCategory } from '@/types'
+import type { Product, Plan } from '@/types'
+import { CATEGORY_LABELS_SHORT, CATEGORY_DOTS } from '@/lib/product-category'
 
 const FORMAT_LABELS: Record<string, string> = {
   capsule: 'Cápsula', powder: 'Polvo', serum: 'Sérum', oil: 'Aceite',
   gummy: 'Gomita', liquid: 'Líquido', cream: 'Crema', solid: 'Sólido',
 }
 
-// Three categories, and three is the answer: Adam ruled on 2026-08-21 that the
-// design's fourth, Cuidado personal, is not a product line. Keyed on
-// ProductCategory rather than string so a value the enum cannot hold is a
-// compile error instead of a branch that silently never runs.
-const CATEGORY_LABELS: Record<ProductCategory, string> = {
-  supplements: 'Suplementos', cosmeticos: 'Cosméticos', cafe: 'Café',
-}
-
-const CATEGORY_DOTS: Record<ProductCategory, string> = {
-  supplements: '#8FC79A', cosmeticos: '#E4A0B7', cafe: '#D9B27C',
-}
+// Both maps live in lib/product-category.ts now; the short register is what
+// fits a card chip.
+const CATEGORY_LABELS = CATEGORY_LABELS_SHORT
 
 interface Props {
   product: Product

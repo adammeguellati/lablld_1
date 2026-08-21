@@ -6,19 +6,14 @@ import Image from 'next/image'
 import { MoreVertical } from 'lucide-react'
 import { formatCOP } from '@/lib/utils'
 import { toggleMerchantProductAction } from '@/app/(merchant)/products/actions'
-import type { LabelStatus, MerchantProduct, Product, ProductCategory } from '@/types'
+import type { LabelStatus, MerchantProduct, Product } from '@/types'
+import { CATEGORY_LABELS_SHORT, CATEGORY_DOTS } from '@/lib/product-category'
 
 export type MyProductRow = MerchantProduct & { product: Product | null }
 
-// Keyed on ProductCategory, not string: the beauty / skincare arms that used to
-// sit here were keyed on values the enum cannot hold, so they could never run.
-const CATEGORY_LABELS: Record<ProductCategory, string> = {
-  supplements: 'Suplementos', cosmeticos: 'Cosméticos', cafe: 'Café',
-}
-
-const CATEGORY_DOTS: Record<ProductCategory, string> = {
-  supplements: '#8FC79A', cosmeticos: '#E4A0B7', cafe: '#D9B27C',
-}
+// Both maps live in lib/product-category.ts now; the short register is what
+// fits a card chip.
+const CATEGORY_LABELS = CATEGORY_LABELS_SHORT
 
 const STATUS: Record<LabelStatus, { label: string; cls: string }> = {
   pending: { label: 'En revisión', cls: 'bg-[#FDEFE0] text-[#B4690E]' },
