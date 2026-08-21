@@ -5,6 +5,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { updateVariantPrice } from '@/lib/shopify'
 import { isAdmin } from '@/lib/utils'
 import { z } from 'zod'
+import { deleteLabelObjects } from '@/lib/storage-cleanup'
 
 const rateSchema = z.object({
   country: z.string().min(1),
@@ -153,7 +154,9 @@ export async function DELETE(
     await db.from('order_items').delete().in('merchant_product_id', mpIds)
   }
   await db.from('shipping_rates').delete().eq('product_id', id)
+  const { data: mpLabels } = await db.from('merchant_products').select('label_url').eq('product_id', id)
   await db.from('merchant_products').delete().eq('product_id', id)
+  await deleteLabelObjects(((mpLabels ?? []) as { label_url: string | null }[]).map((r) => r.label_url))
   const { error } = await db.from('products').delete().eq('id', id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 

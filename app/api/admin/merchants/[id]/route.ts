@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { isAdmin } from '@/lib/utils'
+import { collectMerchantLabelUrls, deleteLabelObjects } from '@/lib/storage-cleanup'
 
 async function verifyAdmin() {
   const supabase = await createClient()
@@ -52,6 +53,11 @@ export async function DELETE(
   const { data: merchant } = await db.from('merchants').select('id').eq('id', id).single()
   if (!merchant) return NextResponse.json({ error: 'No encontrado' }, { status: 404 })
 
+  // Collected BEFORE the rows go, because the URLs only exist on them. The
+  // objects are removed after the rows, so a storage failure cannot leave a
+  // merchant half-deleted.
+  const labelUrls = await collectMerchantLabelUrls(id)
+
   const orderIds = await db.from('orders').select('id').eq('merchant_id', id)
   if (orderIds.data?.length) {
     await db.from('order_items').delete().in('order_id', orderIds.data.map(o => o.id))
@@ -59,12 +65,20 @@ export async function DELETE(
   }
   await db.from('shopify_stores').delete().eq('merchant_id', id)
   await db.from('merchant_products').delete().eq('merchant_id', id)
+  // merchant_labels was missing from this chain (schema notes C15). It has an FK
+  // to merchants, so the delete below would either fail or orphan the rows
+  // depending on that constraint's action — neither of which anyone had checked.
+  await db.from('merchant_labels').delete().eq('merchant_id', id)
 
   const { error: merchantErr } = await db.from('merchants').delete().eq('id', id)
   if (merchantErr) return NextResponse.json({ error: merchantErr.message }, { status: 500 })
 
   const { error: authErr } = await db.auth.admin.deleteUser(id)
   if (authErr) return NextResponse.json({ error: authErr.message }, { status: 500 })
+
+  // Best-effort and last: the account is gone either way, and an orphaned object
+  // is a cleanup problem rather than a broken delete.
+  await deleteLabelObjects(labelUrls)
 
   return NextResponse.json({ ok: true })
 }
