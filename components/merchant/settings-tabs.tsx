@@ -45,15 +45,15 @@ export function SettingsTabs({ fullName, email, plan, pendingPlan, planStatus, p
 
   const firstName = name.split(' ')[0] ?? ''
   const lastName = name.split(' ').slice(1).join(' ')
-  const ic = 'w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-gray-400 transition-colors'
+  const ic = 'w-full rounded-[11px] border border-black/10 px-3.5 py-2.5 text-[14.5px] outline-none transition-colors focus:border-black/25'
 
   return (
     <div className="flex flex-col sm:flex-row gap-6 sm:gap-8 lg:gap-12">
-      <nav className="flex sm:flex-col gap-1 sm:w-44 sm:shrink-0 sm:pt-1 overflow-x-auto pb-1 sm:pb-0 -mx-4 px-4 sm:mx-0 sm:px-0">
+      <nav className="-mx-4 flex gap-1 overflow-x-auto px-4 pb-1 sm:mx-0 sm:w-52 sm:shrink-0 sm:flex-col sm:px-0 sm:pb-0 sm:pt-1">
         {tabs.map(({ key, label }) => (
-          <button key={key} onClick={() => setTab(key)}
-            className={`shrink-0 text-left px-3 py-2 sm:py-2.5 sm:w-full rounded-lg text-sm transition-colors whitespace-nowrap ${
-              tab === key ? 'bg-gray-100 font-semibold text-gray-900' : 'text-gray-500 hover:text-gray-800 hover:bg-gray-50'
+          <button key={key} type="button" onClick={() => setTab(key)}
+            className={`shrink-0 whitespace-nowrap rounded-[10px] px-3 py-2.5 text-left text-[15px] transition-colors sm:w-full ${
+              tab === key ? 'bg-[#F2F2F7] font-medium text-[#1D1E20]' : 'text-[#6E6E73] hover:bg-black/[.04] hover:text-[#1D1E20]'
             }`}>{label}
           </button>
         ))}
@@ -145,7 +145,7 @@ export function SettingsTabs({ fullName, email, plan, pendingPlan, planStatus, p
 
         {tab === 'tiendas' && (
           <div className="space-y-4">
-            <div className="bg-white rounded-xl border border-gray-100 p-5 flex items-center gap-4">
+            <div className="flex items-center gap-4 rounded-[14px] border border-black/[.08] p-5">
               <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0">
                 <svg viewBox="0 0 24 24" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
                   <rect width="24" height="24" fill="#96BF48" rx="5"/>
@@ -173,12 +173,12 @@ export function SettingsTabs({ fullName, email, plan, pendingPlan, planStatus, p
             </div>
 
             {!shopDomain && (
-              <div className="bg-white rounded-xl border border-gray-100 p-5">
+              <div className="rounded-[14px] border border-black/[.08] p-5">
                 <ShopifyConnectForm />
               </div>
             )}
 
-            <div className="flex items-center justify-between rounded-xl border border-gray-100 bg-white px-5 py-4">
+            <div className="flex items-center justify-between rounded-[14px] border border-black/[.08] px-5 py-4">
               <div className="flex items-center gap-3">
                 <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 text-sm">?</div>
                 <div>

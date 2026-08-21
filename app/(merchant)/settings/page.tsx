@@ -29,25 +29,32 @@ export default async function SettingsPage({ searchParams }: Props) {
 
   return (
     <div>
-      <h1 className="text-2xl mb-8 tracking-[0]">Configuración</h1>
-      <div className="flex items-center gap-4 mb-8">
-        <div className="w-14 h-14 rounded-full bg-gray-900 flex items-center justify-center text-white font-semibold text-lg">
+      <h1 className="text-[36px] font-normal leading-[1.12] tracking-[0]">Configuración</h1>
+
+      <div className="mt-6 flex items-center gap-4">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#141A2B] text-[17px] font-medium text-white">
           {initials}
         </div>
-        <p className="font-semibold text-lg">{name}</p>
+        <div>
+          <p className="text-[17px] font-medium text-[#1D1E20]">{name}</p>
+          <p className="text-[13.5px] text-[#86868B]">{user.email}</p>
+        </div>
       </div>
-      <SettingsTabs
-        fullName={merchant?.full_name ?? ''}
-        email={user.email ?? ''}
-        plan={merchant?.plan ?? null}
-        pendingPlan={merchant?.pending_plan ?? null}
-        planStatus={merchant?.plan_status ?? null}
-        planCancelAt={merchant?.plan_cancel_at ?? null}
-        hasPaymentMethod={!!merchant?.wompi_payment_source_id}
-        nextBillingAt={merchant?.subscription_next_billing_at ?? null}
-        shopDomain={store?.shop_domain ?? null}
-        initialTab={initialTab}
-      />
+
+      <div className="mt-[22px] rounded-[22px] border border-black/[.08] bg-white p-[22px] shadow-[0_1px_2px_rgba(0,0,0,.03)]">
+        <SettingsTabs
+          fullName={merchant?.full_name ?? ''}
+          email={user.email ?? ''}
+          plan={merchant?.plan ?? null}
+          pendingPlan={merchant?.pending_plan ?? null}
+          planStatus={merchant?.plan_status ?? null}
+          planCancelAt={merchant?.plan_cancel_at ?? null}
+          hasPaymentMethod={!!merchant?.wompi_payment_source_id}
+          nextBillingAt={merchant?.subscription_next_billing_at ?? null}
+          shopDomain={store?.shop_domain ?? null}
+          initialTab={initialTab}
+        />
+      </div>
     </div>
   )
 }
