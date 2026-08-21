@@ -23,6 +23,7 @@ function LoginForm() {
   const [state, action, isPending] = useActionState(loginAction, { error: null })
   const searchParams = useSearchParams()
   const registered = searchParams.get('registered') === '1'
+  const reset = searchParams.get('reset') === '1'
   const next = searchParams.get('next') ?? ''
 
   return (
@@ -35,6 +36,11 @@ function LoginForm() {
             <p className="mb-5 text-[14.5px] text-[#86868B]">Ingresa tus datos para continuar.</p>
             <hr className="border-gray-300 mb-6" />
           </div>
+          {reset && (
+            <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 mb-5 el-1">
+              <p className="text-sm text-emerald-700">Tu contraseña quedó actualizada. Inicia sesión con la nueva.</p>
+            </div>
+          )}
           {registered && (
             <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 mb-5 el-1">
               <p className="text-sm text-emerald-700">Confirma tu correo y luego inicia sesión.</p>
@@ -47,7 +53,10 @@ function LoginForm() {
               <input name="email" type="email" placeholder="tu@email.com" required autoComplete="username" className={ic} />
             </div>
             <div>
-              <label className="mb-1.5 block text-[12.5px] text-[#86868B]">contraseña</label>
+              <div className="mb-1.5 flex items-baseline justify-between gap-3">
+                <label className="text-[12.5px] text-[#86868B]">contraseña</label>
+                <Link href="/forgot-password" className="text-[12.5px] text-[#6E6E73] hover:text-[#1D1E20] hover:underline">¿La olvidaste?</Link>
+              </div>
               <input name="password" type="password" placeholder="tu contraseña" required autoComplete="current-password" className={ic} />
             </div>
             {state.error && <p className="rounded-[11px] bg-[#FBE9E6] px-3.5 py-2.5 text-[13.5px] text-[#C0303B]">{state.error}</p>}

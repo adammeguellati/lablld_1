@@ -15,6 +15,8 @@ function translateAuthError(msg: string): string {
   if (msg.includes('Too many requests')) return 'Demasiados intentos. Espera unos minutos e intenta de nuevo.'
   if (msg.includes('Password should be')) return 'La contraseña debe tener al menos 6 caracteres.'
   if (msg.includes('Unable to validate email')) return 'Correo electrónico inválido.'
+  if (msg.includes('New password should be different')) return 'La nueva contraseña debe ser distinta de la anterior.'
+  if (msg.includes('Auth session missing')) return 'Tu enlace expiró. Pide uno nuevo para continuar.'
   if (msg.includes('Invalid path specified in request URL')) return CONFIG_ERROR
   // Unknown messages pass through: signup gating is configured in Supabase Auth
   // and its message arrives here, so a generic fallback would swallow it.
@@ -25,6 +27,18 @@ const RegisterSchema = z.object({
   full_name: z.string().min(2, 'Nombre demasiado corto'),
   email: z.email('Email inválido'),
   password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres'),
+})
+
+const ForgotPasswordSchema = z.object({
+  email: z.email('Email inválido'),
+})
+
+const ResetPasswordSchema = z.object({
+  password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres'),
+  confirm: z.string(),
+}).refine((v) => v.password === v.confirm, {
+  message: 'Las contraseñas no coinciden',
+  path: ['confirm'],
 })
 
 const LoginSchema = z.object({
@@ -141,6 +155,52 @@ export async function loginAction(
 
   const onboardingDone = data.user.user_metadata?.onboarding_completed === true
   redirect(onboardingDone ? '/dashboard' : '/onboarding/quien-eres')
+}
+
+export async function requestPasswordResetAction(
+  _prevState: { error: string | null; sent: boolean },
+  formData: FormData
+): Promise<{ error: string | null; sent: boolean }> {
+  const parsed = ForgotPasswordSchema.safeParse({ email: formData.get('email') })
+  if (!parsed.success) return { error: parsed.error.issues[0].message, sent: false }
+
+  const supabase = await safeServerClient()
+  if (!supabase) return { error: CONFIG_ERROR, sent: false }
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.lablld.com'
+  const { error } = await supabase.auth.resetPasswordForEmail(parsed.data.email, {
+    redirectTo: `${appUrl}/api/auth/callback?next=/reset-password`,
+  })
+
+  // Supabase answers 200 for an address it does not know, so nothing here can
+  // reveal whether an account exists — which matters because registration is
+  // invite-gated. Any error that does arrive is a real failure (rate limit, SMTP,
+  // misconfiguration) and is shown rather than swallowed: reporting "enviado"
+  // during an outage leaves the merchant waiting for mail that never comes.
+  if (error) return { error: translateAuthError(error.message), sent: false }
+  return { error: null, sent: true }
+}
+
+export async function resetPasswordAction(
+  _prevState: { error: string | null },
+  formData: FormData
+): Promise<{ error: string | null }> {
+  const parsed = ResetPasswordSchema.safeParse({
+    password: formData.get('password'),
+    confirm: formData.get('confirm'),
+  })
+  if (!parsed.success) return { error: parsed.error.issues[0].message }
+
+  const supabase = await safeServerClient()
+  if (!supabase) return { error: CONFIG_ERROR }
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Tu enlace expiró. Pide uno nuevo para continuar.' }
+
+  const { error } = await supabase.auth.updateUser({ password: parsed.data.password })
+  if (error) return { error: translateAuthError(error.message) }
+
+  redirect('/login?reset=1')
 }
 
 export async function logoutAction() {
