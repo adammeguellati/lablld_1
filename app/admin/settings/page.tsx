@@ -87,22 +87,22 @@ export default function AdminSettingsPage() {
     })
   }
 
-  if (loading) return <div className="text-sm text-gray-400 py-10 text-center">Cargando...</div>
+  if (loading) return <p className="py-14 text-center text-[15px] text-[#86868B]">Cargando...</p>
 
   return (
-    <div className="max-w-2xl space-y-8">
-      <h1 className="text-xl font-semibold text-gray-900">Configuración del panel</h1>
+    <div className="max-w-2xl space-y-6">
+      <h1 className="text-[36px] font-normal leading-[1.12] tracking-[0]">Configuración del panel</h1>
 
-      <section className="space-y-3">
-        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Banners del dashboard</h2>
+      <section className="space-y-3 rounded-[22px] border border-black/[.08] bg-white p-[22px] shadow-[0_1px_2px_rgba(0,0,0,.03)]">
+        <h2 className="text-[12px] font-medium uppercase tracking-[.04em] text-[#86868B]">Banners del dashboard</h2>
         <ItemFields label="Banner 1 (grande)" value={settings.banners[0]}
           onChange={v => setSettings(s => ({ ...s, banners: [v, s.banners[1]] }))} />
         <ItemFields label="Banner 2 (pequeño)" value={settings.banners[1]}
           onChange={v => setSettings(s => ({ ...s, banners: [s.banners[0], v] }))} />
       </section>
 
-      <section className="space-y-3">
-        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Sección Aprende</h2>
+      <section className="space-y-3 rounded-[22px] border border-black/[.08] bg-white p-[22px] shadow-[0_1px_2px_rgba(0,0,0,.03)]">
+        <h2 className="text-[12px] font-medium uppercase tracking-[.04em] text-[#86868B]">Sección Aprende</h2>
         {settings.learn.map((item, i) => (
           <ItemFields key={i} label={`Tarjeta ${i + 1}`} value={item}
             onChange={v => setSettings(s => {
@@ -113,16 +113,16 @@ export default function AdminSettingsPage() {
         ))}
       </section>
 
-      <section className="space-y-2">
-        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Botón &quot;Ordenar Productos&quot;</h2>
+      <section className="space-y-3 rounded-[22px] border border-black/[.08] bg-white p-[22px] shadow-[0_1px_2px_rgba(0,0,0,.03)]">
+        <h2 className="text-[12px] font-medium uppercase tracking-[.04em] text-[#86868B]">Botón &quot;Ordenar Productos&quot;</h2>
         <input value={settings.order_button_url}
           onChange={e => setSettings(s => ({ ...s, order_button_url: e.target.value }))}
           placeholder="/catalog o https://..."
-          className="w-full h-9 border border-gray-200 rounded-lg px-3 text-sm outline-none focus:border-gray-400 bg-white" />
+          className="h-11 w-full rounded-[11px] border border-black/[.10] bg-white px-3.5 text-[14.5px] outline-none transition-colors placeholder:text-[#AEAEB2] focus:border-black/25" />
       </section>
 
       <button onClick={save}
-        className="h-10 px-8 bg-gray-900 text-white text-sm font-semibold rounded-full hover:bg-gray-800 transition-all active:scale-[0.98]">
+        className="h-12 rounded-full bg-[#1D1E20] px-8 text-[15px] font-medium text-white transition-all hover:bg-[#F97316] active:scale-[0.98]">
         {saved ? '✓ Guardado' : 'Guardar cambios'}
       </button>
     </div>
