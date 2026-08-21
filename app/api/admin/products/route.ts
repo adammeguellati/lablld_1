@@ -63,7 +63,10 @@ const productSchema = z.object({
   manufacturer_country: z.string().optional(),
   product_weight_g: z.number().optional(),
   gross_weight_g: z.number().optional(),
-  fulfillment_fee_cop: z.number().optional(),
+  // .int() to match every sibling *_cop. COP has no minor unit in practice and
+  // the other four declarations already said so; this one did not, which is why
+  // its column is numeric(12,2) while the others are integer. See 0007.
+  fulfillment_fee_cop: z.number().int().min(0).optional(),
   shipping_scope: z.string().optional(),
   supplement_facts: supplementFactsSchema.optional(),
   benefit_blocks: z.array(benefitBlockSchema).optional(),

@@ -5,6 +5,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import { Resend } from 'resend'
 import { isAdmin } from '@/lib/utils'
+import { ADMIN_EMAIL_LIST } from '@/lib/utils'
 
 export async function disconnectShopifyAction() {
   const supabase = await createClient()
@@ -39,12 +40,11 @@ export async function requestShopifyConnectionAction(
 
   await db.from('merchants').update({ shopify_request_domain: shopDomain }).eq('id', user.id)
 
-  const adminEmails = (process.env.ADMIN_EMAILS ?? '').split(',').map(e => e.trim()).filter(Boolean)
-  if (adminEmails.length && process.env.RESEND_API_KEY) {
+  if (ADMIN_EMAIL_LIST.length && process.env.RESEND_API_KEY) {
     const resend = new Resend(process.env.RESEND_API_KEY)
     await resend.emails.send({
       from: process.env.RESEND_FROM_EMAIL ?? 'LABLLD <noreply@lablld.com>',
-      to: adminEmails,
+      to: [...ADMIN_EMAIL_LIST],
       subject: `Solicitud de conexión Shopify — ${shopDomain}`,
       html: `<p><strong>${merchant?.full_name ?? user.email}</strong> (${merchant?.email ?? user.email}) solicita conectar la tienda <strong>${shopDomain}</strong>.<br>Merchant ID: ${user.id}</p>`,
     }).catch(() => {})
