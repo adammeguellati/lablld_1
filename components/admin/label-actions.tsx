@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 
 interface Props {
   merchantProductId: string
@@ -27,6 +28,7 @@ export function LabelActions({ merchantProductId }: Props) {
         setError(data.error ?? 'Error al procesar')
         return
       }
+      toast.success(action === 'approve' ? 'Etiqueta aprobada.' : 'Etiqueta rechazada.')
       setShowReject(false)
       setReason('')
       router.refresh()

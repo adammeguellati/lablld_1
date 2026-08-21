@@ -3,6 +3,7 @@
 import { useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { publishToShopifyAction, reconnectInventoryAction } from '@/app/(merchant)/catalog/[slug]/actions'
+import { toast } from 'sonner'
 
 interface Props {
   merchantProductId: string
@@ -19,8 +20,8 @@ export function PublishToShopifyButton({ merchantProductId, productId, shopifyPr
     function handleReconnect() {
       startTransition(async () => {
         const result = await reconnectInventoryAction(merchantProductId)
-        if ('error' in result) alert(result.error)
-        else alert('Sincronizado correctamente. Los próximos pedidos se enrutarán a LABLLD.')
+        if ('error' in result) toast.error(result.error)
+        else toast.success('Sincronizado correctamente. Los próximos pedidos se enrutarán a LABLLD.')
       })
     }
 
@@ -49,8 +50,9 @@ export function PublishToShopifyButton({ merchantProductId, productId, shopifyPr
     startTransition(async () => {
       const result = await publishToShopifyAction(merchantProductId, productId)
       if ('error' in result) {
-        alert(result.error)
+        toast.error(result.error)
       } else {
+        toast.success('Publicado en tu tienda Shopify.')
         router.refresh()
       }
     })

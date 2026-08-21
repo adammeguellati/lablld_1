@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { AlertTriangle } from 'lucide-react'
+import { toast } from 'sonner'
 
 type Action = 'toggle_active' | 'cancel_subscription' | 'delete'
 
@@ -10,6 +11,15 @@ interface Props {
   merchantName: string
   isActive: boolean
   hasSubscription: boolean
+}
+
+async function readError(res: Response): Promise<string> {
+  try {
+    const data = await res.json()
+    return typeof data?.error === 'string' ? data.error : 'No se pudo completar la acción.'
+  } catch {
+    return 'No se pudo completar la acción.'
+  }
 }
 
 const WARNINGS: Record<Action, (name: string) => { title: string; body: string; cta: string; danger: boolean }> = {
@@ -47,7 +57,9 @@ export function MerchantActions({ merchantId, merchantName, isActive, hasSubscri
     startTransition(async () => {
       if (action === 'delete') {
         const res = await fetch(`/api/admin/merchants/${merchantId}`, { method: 'DELETE' })
-        if (res.ok) setDeleted(true)
+        if (!res.ok) { toast.error(await readError(res)); return }
+        setDeleted(true)
+        toast.success(`Cuenta de ${merchantName} eliminada.`)
         return
       }
       const res = await fetch(`/api/admin/merchants/${merchantId}`, {
@@ -55,9 +67,16 @@ export function MerchantActions({ merchantId, merchantName, isActive, hasSubscri
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action }),
       })
-      if (res.ok) {
-        if (action === 'toggle_active') setLocalActive((v) => !v)
-        if (action === 'cancel_subscription') setSubCancelled(true)
+      // Every one of these branches used to fail SILENTLY: a non-ok response
+      // left the row exactly as it was and told the operator nothing.
+      if (!res.ok) { toast.error(await readError(res)); return }
+      if (action === 'toggle_active') {
+        setLocalActive((v) => !v)
+        toast.success(localActive ? 'Cuenta suspendida.' : 'Cuenta reactivada.')
+      }
+      if (action === 'cancel_subscription') {
+        setSubCancelled(true)
+        toast.success('Suscripción cancelada.')
       }
     })
   }

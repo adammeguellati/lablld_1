@@ -373,16 +373,20 @@
     {
       "id": "CODE-mount-toast-system",
       "title": "sonner is installed and components/ui/sonner.tsx exists, but <Toaster /> is mounted nowhere and toast() is never called; the design handoff specifies a toast after every admin action",
-      "lane": "in_flight",
+      "lane": "shipped",
       "home_lane": "in_flight",
-      "status": "todo",
+      "status": "shipped",
       "priority": "medium",
       "owner_terminal": "unassigned",
       "gate": "green_self_merge",
       "blocked_on": null,
       "last_checkpoint": "2026-08-21",
-      "evidence": null,
-      "notes": "P2 · Source: audit §8.2; docs/design/DESIGN-HANDOFF-INVENTORY.md §3 item 16. The dependency is already there, unwired. QUEUED 2026-08-21 into the W2 run order by Ivan’s dispatch; moved out of Loose ends because it is now scheduled work rather than tracked-but-unqueued hygiene."
+      "evidence": {
+        "kind": "pr",
+        "ref": "#28",
+        "at": "2026-08-21"
+      },
+      "notes": "P2 · Source: audit §8.2; docs/design/DESIGN-HANDOFF-INVENTORY.md §3 item 16. The dependency is already there, unwired. QUEUED 2026-08-21 into the W2 run order by Ivan’s dispatch; moved out of Loose ends because it is now scheduled work rather than tracked-but-unqueued hygiene. SHIPPED 2026-08-21 in PR #28. Non-visual in the board’s sense — it adds no screen and changes no layout — so it ships on merge; the toasts themselves are on the click-list for the batch review. WHAT LANDED: <Toaster /> mounted in app/layout.tsx, which is the whole unlock — every toast() call in the codebase was a no-op until something rendered the container. Pinned theme=\"light\" rather than left on \"system\": the app has no dark mode, so a viewer whose OS is dark would have got dark toasts on light screens. ALL FIVE alert() CALLS ARE GONE, replaced by toast.error / toast.success: three in publish-to-shopify-button.tsx, two in admin/settings. A browser alert blocks the whole page and cannot be styled, which is why the handoff specifies toasts. SUCCESS FEEDBACK ADDED where the design asks for \"a toast after every admin action\": label approve and reject, order status changes, and the three merchant actions. THE REAL FIND, and the reason the card was worth more than mounting a component: merchant-actions.tsx FAILED SILENTLY on every path. A non-ok response from the delete, suspend or cancel endpoint left the row exactly as it was and told the operator nothing at all — the click looked like it had done nothing, which is indistinguishable from a UI that ignored the click. All three now read the error body and surface it. VERIFIED in an isolation harness: success and error toasts both render bottom-right in light theme with rich colours and a close button, carrying data-type success and error respectively."
     },
     {
       "id": "CODE-fulfillment-notification-timeout",
