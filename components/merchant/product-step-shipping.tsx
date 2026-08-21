@@ -29,8 +29,6 @@ export function ProductStepShipping({ mode, onChange, onNext, onBack }: Props) {
   return (
     <div className="space-y-6">
       <div>
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">PASO 2</p>
-        <h2 className="text-xl font-bold">Modalidad de envío</h2>
         <p className="text-sm text-gray-500 mt-1">
           Selecciona el servicio de entrega para los pedidos de este producto.{' '}
           <a

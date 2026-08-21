@@ -19,14 +19,12 @@ export function ProductStepMockup({ mpId, mockupUrl, isPending, creditsUsed, cre
     <div className="space-y-5">
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">PASO 4</p>
-          <h2 className="text-xl font-bold">Generar Mockup</h2>
           <p className="text-sm text-gray-500 mt-0.5">Crea una imagen 3D de tu producto con tu etiqueta.</p>
         </div>
         <span className={`text-xs font-medium px-2.5 py-1 rounded-full shrink-0 ${
           limitReached ? 'bg-red-50 text-red-600' : creditsUsed >= creditsLimit - 2 ? 'bg-amber-50 text-amber-600' : 'bg-gray-100 text-gray-500'
         }`}>
-          {creditsUsed}/{creditsLimit} este mes
+          {remaining} de {creditsLimit} renders restantes
         </span>
       </div>
 
@@ -64,10 +62,17 @@ export function ProductStepMockup({ mpId, mockupUrl, isPending, creditsUsed, cre
               Has alcanzado el límite de {creditsLimit} mockups este mes. Se renueva el próximo mes.
             </p>
           ) : (
-            <button onClick={onGenerate} disabled={isPending || !mpId}
-              className="w-full bg-gray-900 text-white py-3 rounded-lg text-sm font-semibold hover:bg-gray-700 disabled:opacity-60 transition-colors">
-              {isPending ? 'Generando...' : 'Generar Mockup →'}
-            </button>
+            <>
+              <button onClick={onGenerate} disabled={isPending || !mpId}
+                className="w-full bg-gray-900 text-white py-3 rounded-lg text-sm font-semibold hover:bg-gray-700 disabled:opacity-60 transition-colors">
+                {isPending ? 'Generando...' : 'Generar Mockup →'}
+              </button>
+              {/* The design promises "Intentos ilimitados hasta que te guste".
+                  The meter is real and monthly, so the chip above states the
+                  remaining count before it is hit, not only in the error. Both
+                  numbers come from the MOCKUP_LIMIT the server enforces. */}
+              <p className="text-xs text-gray-400">Se renueva el primer día de cada mes.</p>
+            </>
           )}
         </div>
       )}
