@@ -5,9 +5,8 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { updateProduct, updateVariantPrice } from '@/lib/shopify'
 import { generateMockup } from '@/lib/sudomock'
 import { signLabelUrl, LABEL_FETCH_TTL } from '@/lib/storage'
+import { MOCKUP_LIMIT } from '@/lib/limits'
 import type { MerchantProduct } from '@/types'
-
-const MOCKUP_LIMIT = 6
 
 export async function saveMerchantProductAction(
   productId: string,

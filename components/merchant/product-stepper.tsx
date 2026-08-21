@@ -8,6 +8,7 @@ import { ProductStepMockup } from './product-step-mockup'
 import { ProductStepShipping } from './product-step-shipping'
 import { saveMerchantProductAction, getLabelStatusAction, generateProductMockupAction } from '@/app/(merchant)/products/[id]/actions'
 import { publishToShopifyAction } from '@/app/(merchant)/catalog/[slug]/actions'
+import { MOCKUP_LIMIT } from '@/lib/limits'
 import type { MerchantProduct, Plan, LabelStatus, ThemeLabel } from '@/types'
 
 // SIX steps, not the design's four. The design has no Envío, no Revisión and no
@@ -94,7 +95,7 @@ export function ProductStepper({ productId, productName, dims, canvaUrl, themeLa
     if (!mpId) return
     startMockup(async () => {
       const r = await generateProductMockupAction(mpId, force)
-      if (r.error === 'MOCKUP_LIMIT') { setError('Has alcanzado el límite de 6 mockups este mes.'); return }
+      if (r.error === 'MOCKUP_LIMIT') { setError(`Has alcanzado el límite de ${MOCKUP_LIMIT} mockups este mes.`); return }
       if (r.error) { setError(r.error); return }
       if (r.mockupUrl) setMockupUrl(r.mockupUrl)
       setMockupCredits(r.creditsUsed)
@@ -247,7 +248,7 @@ export function ProductStepper({ productId, productName, dims, canvaUrl, themeLa
 
       {step === 5 && (
         <ProductStepMockup mpId={mpId} mockupUrl={mockupUrl}
-          isPending={isMockupPending} creditsUsed={mockupCredits} creditsLimit={6}
+          isPending={isMockupPending} creditsUsed={mockupCredits} creditsLimit={MOCKUP_LIMIT}
           onGenerate={() => generateMockup(false)} onRegenerate={() => generateMockup(true)} onSkip={() => goTo(6)} />
       )}
 
