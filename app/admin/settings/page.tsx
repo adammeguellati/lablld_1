@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition, type ChangeEvent } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { toast } from 'sonner'
 
 interface Item { image_url: string; link_url: string }
 interface Settings {
@@ -32,8 +33,9 @@ function ItemFields({ label, value, onChange }: { label: string; value: Item; on
       if (error) throw error
       const { data: { publicUrl } } = sb.storage.from('product-images').getPublicUrl(path)
       onChange({ ...value, image_url: publicUrl })
+      toast.success('Imagen actualizada.')
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Error al subir imagen')
+      toast.error(err instanceof Error ? err.message : 'Error al subir imagen')
     } finally {
       setUploading(false)
       if (fileRef.current) fileRef.current.value = ''

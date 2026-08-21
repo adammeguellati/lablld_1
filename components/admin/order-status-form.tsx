@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { confirmQuoteAction, markDeliveredAction, markInProductionAction, markShippedAction } from '@/app/admin/orders/[id]/actions'
 import type { OrderStatus } from '@/types'
+import { toast } from 'sonner'
 
 interface Props { orderId: string; status: OrderStatus; productCostCop?: number | null }
 
@@ -27,6 +28,7 @@ export function OrderStatusForm({ orderId, status, productCostCop }: Props) {
       if ('error' in res && res.error) { setError(res.error); return }
       if ('shopifyWarning' in res && res.shopifyWarning) { setShopifyMsg({ type: 'warn', text: `Shopify: ${res.shopifyWarning}` }); return }
       if ('shopifyInfo' in res && res.shopifyInfo) { setShopifyMsg({ type: 'info', text: res.shopifyInfo }); return }
+      toast.success('Pedido actualizado.')
       router.refresh()
     })
   }
