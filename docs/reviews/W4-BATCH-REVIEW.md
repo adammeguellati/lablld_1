@@ -344,3 +344,114 @@ pass. **G6, G7 and G8 are spend, domain and a card cycle — none is code work.*
 
 **There is no remaining code work that is not either blocked on you, blocked on
 Adam, or waiting on one word.** §9.3 is the shortest path to more of it.
+
+---
+
+# W5 note — appended 2026-08-21
+
+A note rather than a packet, because W5 was one card plus the defect it found.
+**Two PRs (#47, #48). Shipped 56 → 58.** Board fingerprint `364e68493c923789`,
+87 cards, still 3/8 gates.
+
+## The `e2e` job has reported and passed
+
+`typecheck` · `lint` · `build` · **`e2e`** — four jobs, all green on #47, e2e in
+**1m21s**. **You can add `e2e` to required checks now.**
+
+18 tests, chromium only, 8 seconds locally. Zero retries on purpose: a smoke
+suite that passes on the second attempt is reporting a flake as a success.
+
+## I could not build the suite you specified, and the reason is structural
+
+You asked for **login on both provisioned accounts, catalogue rendering products,
+and the admin orders list rendering** — and for the suite to touch **no real
+service**. Those two requirements are in tension.
+
+With placeholder env there is no auth backend, so there is no session, so there
+is no logged-in page to assert on. Faking it from the browser does not work
+either: the proxy checks the session **server-side**, and Playwright intercepts
+browser requests, not a fetch the Node server makes to itself.
+
+**The constraint wins**, so every test is one of two kinds — a page that renders
+without a session, or a route that correctly refuses without one.
+
+What that does cover, and it is not nothing: `proxy.ts`, both route groups, all
+four auth screens, and the server actions' failure path.
+
+**The negative case is broader than the single route you asked for.** All five
+merchant protected routes, all five admin ones, and `/` redirect to `/login`.
+Plus `/reset-password` without a recovery session must render the **expired
+state** and must **not** render the form — if that regressed, the only thing
+between an anonymous visitor and a password change would be the server action's
+own guard.
+
+The missing third is `BACKLOG-e2e-authenticated`, with three unblock routes
+costed. **Recommendation: the Supabase CLI in CI** — local Postgres and auth in
+Docker, seeded from `supabase/seed.sql`. It keeps *"never a real service"* true,
+which is the property the constraint exists to protect.
+
+## The suite found a real defect before it had a job to run in
+
+**A login against an unreachable Supabase showed the merchant `"fetch failed"`**
+— undici's English — inside a Spanish error box.
+
+`translateAuthError` ends in a **deliberate** raw fallback, because Supabase
+Auth's signup-gating message arrives through it and a generic catch-all would
+swallow the one message that must reach the screen. Transport failures fell
+through that same fallback.
+
+It survived because it only appears when Supabase is unreachable — which never
+happens in normal use and is **exactly the state placeholder env creates**.
+
+Fixed narrowly: a list of transport phrases maps to the existing `CONFIG_ERROR`
+copy; the raw fallback is untouched. **The cause is not lost, it moves** — the
+login path now reports through `lib/ops-report.ts`, so the operator sees
+`{"scope":"auth.config","action":"login","message":"fetch failed"}` while the
+merchant sees Spanish.
+
+**Negative arm on the suite itself:** removing that fix turns the Spanish test red
+at the exact assertion; restoring it returns all 18 to green. A smoke suite nobody
+has watched fail is a suite nobody knows works.
+
+Also removed `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` from the build job's env. It
+outlived Stripe itself.
+
+## Nothing else is buildable — plainly
+
+I checked §9 card by card rather than assuming. **The only remaining
+`green_self_merge` cards are:**
+
+| card | why I did not build it |
+|---|---|
+| `UI-supplement-facts-by-category` | Already built. `in_flight` — I cannot ship it, only you can confirm the screen |
+| `FEAT-product-revive-choice` | Same |
+| `CHORE-repo-weight` | Its remainder is **a question, not work**: delete or keep ~30 MB of onboarding design comps no app code references. Adam ruled onboarding stays with a redesign as a future session, so they may be wanted for it. Safe and reversible either way, which is precisely why sweeping them without an answer would be manufacturing work |
+
+**No migration is left to author.** `0007` covers the only schema change an open
+card needs. `CODE-admin-emails-sync` would need one, but its two forks — a JWT
+claim or role column versus a sync — are a decision, and authoring for one fork
+would be guessing which you will pick.
+
+## Rulings recorded
+
+- **Wompi** — `CHORE-verify-wompi-price-unit` is **blocked on you**, multiplier
+  untouched. Recorded as doctrine, not just status: reasoning about a payment
+  API's units is exactly the kind of confident wrong answer that costs 100× in
+  one direction, and the number Wompi's own dashboard displays is the only
+  evidence that settles it. `0007` is unaffected — it decides what the **column**
+  holds, not what Wompi receives, and the two were kept apart deliberately.
+- **The cron/fulfillment findings and the `safeServerClient` catch** — accepted,
+  no further action.
+- **Ruling (a) resolution** — accepted; both `in_flight` cards ride your next
+  screen pass.
+
+## What the board is now
+
+**29 open cards. Every one is a launch gate, a dashboard action, or an Adam
+decision** — which is what you said the board should be after this.
+
+Two exceptions worth naming so the claim is honest: the two `in_flight` cards
+above are code that is written and waiting on your eyes, and `CHORE-repo-weight`
+is waiting on one word from you. Neither is unbuilt work.
+
+§9 above is still the runway; only §9.3 has shrunk — Playwright is answered.
