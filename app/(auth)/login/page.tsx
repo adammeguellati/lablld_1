@@ -7,7 +7,7 @@ import Image from 'next/image'
 import { loginAction } from '../actions'
 import { Logo } from '@/components/shared/logo'
 
-const ic = 'w-full h-12 border border-gray-200 rounded-xl px-4 text-sm outline-none focus:border-gray-400 bg-white transition-colors placeholder:text-gray-400'
+const ic = 'w-full h-12 rounded-[11px] border border-black/10 bg-white px-4 text-[14.5px] outline-none transition-colors focus:border-black/25 placeholder:text-[#AEAEB2]'
 
 function RightPanel() {
   return (
@@ -31,8 +31,8 @@ function LoginForm() {
         <div className="max-w-sm mx-auto w-full">
           <div className="mb-10 el-0"><Logo href="/" /></div>
           <div className="el-1">
-            <h1 className="text-4xl text-gray-900 leading-tight mb-2">Bienvenido<br />de vuelta.</h1>
-            <p className="text-sm text-gray-400 mb-5">Por favor, introduzca sus datos.</p>
+            <h1 className="mb-2 text-[36px] font-normal leading-[1.12] tracking-[-0.008em] text-[#1D1E20]">Bienvenido<br />de vuelta.</h1>
+            <p className="mb-5 text-[14.5px] text-[#86868B]">Ingresa tus datos para continuar.</p>
             <hr className="border-gray-300 mb-6" />
           </div>
           {registered && (
@@ -40,25 +40,25 @@ function LoginForm() {
               <p className="text-sm text-emerald-700">Confirma tu correo y luego inicia sesión.</p>
             </div>
           )}
-          <form action={action} autoComplete="off" className="space-y-4 el-2">
+          <form action={action} className="space-y-4 el-2">
             {next && <input type="hidden" name="next" value={next} />}
             <div>
-              <label className="block text-xs text-gray-500 mb-1.5">correo electrónico</label>
-              <input name="email" type="email" placeholder="tu@email.com" required autoComplete="off" className={ic} />
+              <label className="mb-1.5 block text-[12.5px] text-[#86868B]">correo electrónico</label>
+              <input name="email" type="email" placeholder="tu@email.com" required autoComplete="username" className={ic} />
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1.5">contraseña</label>
-              <input name="password" type="password" placeholder="tu contraseña" required autoComplete="new-password" className={ic} />
+              <label className="mb-1.5 block text-[12.5px] text-[#86868B]">contraseña</label>
+              <input name="password" type="password" placeholder="tu contraseña" required autoComplete="current-password" className={ic} />
             </div>
-            {state.error && <p className="text-sm text-red-600">{state.error}</p>}
+            {state.error && <p className="rounded-[11px] bg-[#FBE9E6] px-3.5 py-2.5 text-[13.5px] text-[#C0303B]">{state.error}</p>}
             <button type="submit" disabled={isPending}
-              className="w-full h-12 bg-gray-900 text-white text-sm font-semibold rounded-full hover:bg-gray-800 disabled:opacity-60 active:scale-[0.98] transition-all mt-1">
+              className="mt-1 h-12 w-full rounded-full bg-[#1D1E20] text-[15px] font-medium text-white transition-all hover:bg-[#F97316] active:scale-[0.98] disabled:opacity-60">
               {isPending ? 'Entrando...' : 'Iniciar sesión'}
             </button>
           </form>
-          <p className="mt-5 text-center text-sm text-gray-500 el-3">
+          <p className="el-3 mt-5 text-center text-[14px] text-[#6E6E73]">
             ¿No tienes cuenta?{' '}
-            <Link href="/register" className="text-gray-900 font-bold">Regístrate</Link>
+            <Link href="/register" className="font-medium text-[#1D1E20] hover:underline">Regístrate</Link>
           </p>
         </div>
       </div>
