@@ -2,6 +2,7 @@ import { timingSafeEqual } from 'node:crypto'
 import { NextResponse, type NextRequest } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { chargePaymentSource, getPlanPriceCOP } from '@/lib/wompi'
+import { reportOpsFailure } from '@/lib/ops-report'
 import type { Plan } from '@/types'
 
 export const runtime = 'nodejs'
@@ -85,11 +86,36 @@ export async function GET(req: NextRequest) {
         await db.from('merchants').update({ plan_status: 'past_due' }).eq('id', m.id)
         results.push({ id: m.id, status: 'pending' })
       }
-    } catch {
+    } catch (err) {
       await db.from('merchants').update({ plan_status: 'past_due' }).eq('id', m.id)
+      reportOpsFailure('cron.billing', {
+        merchantId: m.id, plan: activePlan, amount, reference,
+        message: err instanceof Error ? err.message : String(err),
+      })
       results.push({ id: m.id, status: 'failed' })
     }
   }
 
-  return NextResponse.json({ charged: results.filter(r => r.status === 'charged').length, pastDue: expiredNoCard?.length ?? 0, results })
+  const failed = results.filter(r => r.status === 'failed').length
+  const body = {
+    charged: results.filter(r => r.status === 'charged').length,
+    pastDue: expiredNoCard?.length ?? 0,
+    failed,
+    results,
+  }
+
+  // A run where every charge threw used to return 200, so Vercel's cron monitor
+  // recorded a success and nobody was told. The platform already watches this
+  // endpoint's status code; making the status honest turns that into the alert,
+  // with no vendor and no new moving part.
+  //
+  // The charges themselves are NOT rolled back — the affected merchants are
+  // already marked past_due above. The non-200 reports the run, it does not undo
+  // it, and a retry is safe because each attempt re-reads who is still due.
+  if (failed > 0) {
+    reportOpsFailure('cron.billing', { summary: true, ...body, results: undefined })
+    return NextResponse.json(body, { status: 500 })
+  }
+
+  return NextResponse.json(body)
 }

@@ -539,16 +539,20 @@
     {
       "id": "INFRA-billing-alerting",
       "title": "The daily billing cron fails silently: no Sentry, no analytics, no error reporting anywhere in the codebase, and a failure shows only as a plan_status change nobody watches",
-      "lane": "in_flight",
+      "lane": "shipped",
       "home_lane": "in_flight",
-      "status": "todo",
+      "status": "shipped",
       "priority": "high",
       "owner_terminal": "unassigned",
       "gate": "green_self_merge",
       "blocked_on": null,
-      "last_checkpoint": "2026-08-20",
-      "evidence": null,
-      "notes": "P0 · Source: audit R8. ADDED-BY-SWEEP. A new third-party vendor (Sentry or equivalent) needs asking first. ADDED 2026-08-20 while closing INC-02: the auth entry points now fail closed on an unusable Supabase configuration (lib/supabase/safe.ts) and swallow the cause, because the repo keeps CLAUDE.md's no-console rule with zero exceptions and a hotfix was the wrong place to introduce a logging convention. When this card is built, the reporting seam it introduces must cover those paths: a login or registration that fails on configuration currently leaves no operator-visible trace at all."
+      "last_checkpoint": "2026-08-21",
+      "evidence": {
+        "kind": "pr",
+        "ref": "#42",
+        "at": "2026-08-21"
+      },
+      "notes": "P0 · Source: audit R8. ADDED-BY-SWEEP. A new third-party vendor (Sentry or equivalent) needs asking first. ADDED 2026-08-20 while closing INC-02: the auth entry points now fail closed on an unusable Supabase configuration (lib/supabase/safe.ts) and swallow the cause, because the repo keeps CLAUDE.md's no-console rule with zero exceptions and a hotfix was the wrong place to introduce a logging convention. When this card is built, the reporting seam it introduces must cover those paths: a login or registration that fails on configuration currently leaves no operator-visible trace at all. SHIPPED 2026-08-21 in PR #42, WITHOUT a new vendor — which the card required, since it says outright that Sentry or equivalent needs asking first. The vendor question survives as INFRA-error-reporting-vendor; what shipped is everything that does not depend on it. THE BIGGEST FIX NEEDS NO VENDOR AT ALL: the cron returned HTTP 200 even when every single charge threw, so Vercel’s cron monitor recorded a success and nobody was told. It now returns 500 when any charge failed. The platform already watches this endpoint’s status code, so making the status honest turns existing monitoring into the alert. THE CHARGES ARE NOT ROLLED BACK by that non-200 and the code says so: affected merchants are already marked past_due, the status reports the run rather than undoing it, and a retry is safe because each attempt re-reads who is still due. lib/ops-report.ts is the seam. One function, one file, structured JSON to stderr. Wired into the cron’s per-merchant catch and into lib/supabase/safe.ts, which is the auth-config path this card was explicitly extended to cover when INC-02 closed — a login failing on configuration used to leave no operator-visible trace at all. CLAUDE.md’S NO-CONSOLE RULE IS NOW ENFORCED RATHER THAN DOCUMENTED. It lived in a document and nothing checked it, which is the same shape of problem as a limit living in a sentence. no-console is an eslint ERROR now, with exactly one file exempted. NEGATIVE ARM: a console.log added to any other file reddens lint with \"Unexpected console statement\"; the same statement in lib/ops-report.ts passes. Widening that exemption is now a visible decision rather than a quiet habit. THE SEAM IMMEDIATELY EARNED ITS KEEP by exposing a latent bug nobody had seen: the first build after wiring it logged an auth.config failure for /reset-password that was really Next saying \"this route is dynamic\". safeServerClient was CATCHING Next’s control-flow throw — redirect, notFound and dynamic detection all signal by throwing with a digest — which is a bug dressed as resilience. Those are re-thrown now and never reported. A channel that cries wolf on every build is worse than no channel."
     },
     {
       "id": "INFRA-account-transfer",
@@ -617,16 +621,20 @@
     {
       "id": "INFRA-node-version-pin",
       "title": "No engines field, no .nvmrc, no .node-version; the runtime is whatever Vercel currently defaults to",
-      "lane": "loose_ends",
+      "lane": "shipped",
       "home_lane": "loose_ends",
-      "status": "todo",
+      "status": "shipped",
       "priority": "low",
       "owner_terminal": "unassigned",
       "gate": "green_self_merge",
       "blocked_on": null,
-      "last_checkpoint": "2026-08-20",
-      "evidence": null,
-      "notes": "P3 · Source: audit §1, §9. ADDED-BY-SWEEP."
+      "last_checkpoint": "2026-08-21",
+      "evidence": {
+        "kind": "pr",
+        "ref": "#42",
+        "at": "2026-08-21"
+      },
+      "notes": "P3 · Source: audit §1, §9. ADDED-BY-SWEEP. SHIPPED 2026-08-21 in PR #42. package.json gains engines.node \">=22.11.0 <23\" and a .nvmrc pins 22.11.0, so local, CI and Vercel agree on a major version instead of inheriting whatever the platform currently defaults to. The range is deliberate rather than an exact pin: patch upgrades should not need a commit, major ones should."
     },
     {
       "id": "PROD-rebuild-or-redesign",
@@ -1506,6 +1514,20 @@
       "last_checkpoint": "2026-08-21",
       "evidence": null,
       "notes": "P1 · Created 2026-08-21 from Adam’s ruling via Ivan, following FEAT-merchant-product-delete which shipped on the same review. WHAT HAPPENS TODAY: the soft delete leaves the row in place, and saveMerchantProductAction finds it by the (merchant_id, product_id) pair and clears deleted_at. So a re-add silently REVIVES the old label, mockup and price. That is not a bug — the unique constraint deliberately stays whole because six call sites resolve that pair with .maybeSingle() — but it is a decision made for the merchant without telling them. WHAT THE RULING ADDS: revive stays the behaviour, and the merchant is told and given a choice. \"Usar etiqueta anterior\" versus start blank. THE CHOICE ONLY EXISTS WHEN THERE IS SOMETHING TO REUSE: a re-add with no stored label has nothing to offer, so the prompt must not appear at all rather than appearing with an empty option. STARTING BLANK IS A CLEAR, NOT A DELETE: it must clear label_url, label_status and mockup_url on the revived row rather than inserting a second row, because the unique constraint forbids the second row and that is exactly why the revive path exists. RE-DERIVE the create-flow entry point before building: app/(merchant)/products/[id]/page.tsx computes initialStep from the merchant_products row, and that row is currently filtered by deleted_at is null, so the deleted row is invisible to the page but visible to the save action. That asymmetry is where the choice has to be surfaced. BUILT 2026-08-21 in PR #40. UI card: in_flight awaiting a final Ivan + Adam pass. WHERE THE CHOICE LIVES, and it is exactly the asymmetry the card predicted: /products/[id] reads the LIVE row (deleted_at is null), so a deleted product is invisible to the page while still being found by saveMerchantProductAction, which would revive it silently. The page now looks for the deleted row too and, when it finds one WITH a stored label, renders the choice instead of the stepper. THE PROMPT DOES NOT APPEAR WHEN THERE IS NOTHING TO REUSE. A deleted row with no label falls straight through to a fresh stepper at step 1, and the existing save path revives the empty row invisibly — which is correct, because there is nothing to tell the merchant about. STARTING BLANK IS A CLEAR, NOT A DELETE, and not an insert either. reviveBlankAction updates the same row: deleted_at null, is_active true, and label_url, label_status, label_rejection_reason and mockup_url reset. Inserting a second row is not available — the unique (merchant_id, product_id) constraint forbids it, which is precisely why the revive path exists — and clearing rather than deleting is what keeps the order history hanging off that row intact. Both actions are scoped .eq(merchant_id) on the lookup AND on the update, so a guessed product id cannot reopen someone else’s row. PDF LABELS get a document chip rather than a broken img, same as the two uploaders and the admin lightbox. VERIFIED in an isolation harness: both states render, the PDF case shows the chip, and the action REFUSES server-side rather than silently succeeding — the harness has no session, so it returns \"No autenticado\" and the prompt surfaces it. The downstream \"Producto no encontrado\" guard is unreachable without a session and is stated as unproven rather than claimed. WHAT IS LEFT FOR THE REVIEW PASS: the round trip on a real account. Delete a product, re-add it from the catalog, confirm the prompt appears with the right label, take \"usar etiqueta anterior\" and confirm the flow resumes at the review step, then delete and re-add again taking \"empezar de cero\" and confirm the label is gone and the stepper starts at step 3."
+    },
+    {
+      "id": "INFRA-error-reporting-vendor",
+      "title": "Choose an error-reporting vendor (Sentry or equivalent) and point the ops-report seam at it. The seam exists; nothing aggregates, alerts or retains",
+      "lane": "adam_batch",
+      "home_lane": "adam_batch",
+      "status": "todo",
+      "priority": "medium",
+      "owner_terminal": "adam",
+      "gate": "adam_authorizes",
+      "blocked_on": null,
+      "last_checkpoint": "2026-08-21",
+      "evidence": null,
+      "notes": "Created 2026-08-21 from INFRA-billing-alerting, which shipped everything that did not need a vendor. This is the half that does, and it is an adam_authorizes card because a new third-party vendor is a spend and an account, not a code change. WHAT ALREADY WORKS WITHOUT IT: the billing cron returns a non-200 on a failed run, so Vercel’s own cron monitoring flags it, and every failure writes structured JSON through lib/ops-report.ts, which Vercel retains as function logs. WHAT IS STILL MISSING, and it is worth being precise rather than alarming: nothing AGGREGATES (one merchant failing looks the same as forty), nothing ALERTS unprompted (someone has to open the dashboard), and log retention on the current plan is short — which ties this to INFRA-vercel-pro. THE WORK IS SMALL WHEN THE DECISION IS MADE: every call site already routes through one function in one file, so pointing it at a reporter is an edit to lib/ops-report.ts and nothing else. That was the reason for building the seam first. WORTH DECIDING TOGETHER WITH INFRA-vercel-pro, since log retention is the same purchase question wearing a different hat."
     }
   ]
 }
