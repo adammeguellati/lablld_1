@@ -2,6 +2,7 @@ import { LabelActions } from './label-actions'
 import { LabelLightbox } from './label-lightbox'
 import { formatDate } from '@/lib/utils'
 import type { MerchantLabel, Merchant } from '@/types'
+import { LabelThumb } from '@/components/shared/label-thumb'
 
 export type LabelRow = MerchantLabel & {
   merchant: Pick<Merchant, 'id' | 'email' | 'full_name'> | null
@@ -50,11 +51,7 @@ export function AdminLabelsTable({ rows, viewUrls, filtered }: Props) {
                 <td className="py-3 pr-3">
                   <LabelLightbox url={url} alt={row.name ?? 'Etiqueta'}
                     className="h-[62px] w-[46px] shrink-0 overflow-hidden rounded-[7px] border border-black/[.08] bg-[#F5F5F7] transition-opacity hover:opacity-80">
-                    {/* A signed, expiring URL is a fresh optimizer cache miss on
-                        every render, so next/image would bill a transformation
-                        each time. */}
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={url} alt="" className="h-full w-full object-contain" />
+                    <LabelThumb url={url} alt="" className="h-full w-full" />
                   </LabelLightbox>
                 </td>
                 <td className="py-3 pr-3 text-[14.5px] font-medium text-[#1D1E20]">{row.name ?? '—'}</td>

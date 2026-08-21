@@ -10,6 +10,7 @@ import { LabelLightbox } from '@/components/admin/label-lightbox'
 import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from '@/lib/order-status'
 import { formatCOP, formatDate, isAdmin } from '@/lib/utils'
 import type { Order, OrderItem, MerchantProduct, Product } from '@/types'
+import { LabelThumb } from '@/components/shared/label-thumb'
 
 const MGMT_STATUSES = ['pending', 'quote_pending', 'payment_pending', 'paid', 'in_production', 'shipped']
 const CARD = 'rounded-[22px] border border-black/[.08] bg-white p-[22px] shadow-[0_1px_2px_rgba(0,0,0,.03)]'
@@ -65,10 +66,7 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
                     {labelUrl ? (
                       <LabelLightbox url={labelUrl} alt={name ?? 'Etiqueta'}
                         className="h-[62px] w-[46px] shrink-0 overflow-hidden rounded-[7px] border border-black/[.08] bg-[#F5F5F7] transition-opacity hover:opacity-80">
-                        {/* A signed, expiring URL is a fresh optimizer cache miss on every
-                            render, so next/image would bill a transformation each time. */}
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={labelUrl} alt="" className="h-full w-full object-contain" />
+                        <LabelThumb url={labelUrl} alt="" className="h-full w-full" />
                       </LabelLightbox>
                     ) : (
                       <div className="flex h-[62px] w-[46px] shrink-0 items-center justify-center rounded-[7px] border border-dashed border-black/[.12] bg-[#FAFAFA]">
