@@ -277,16 +277,20 @@
     {
       "id": "CODE-remove-stripe",
       "title": "Delete the Stripe webhook route, lib/stripe.ts and the three @stripe/* deps, remove the endpoint from the Stripe account, THEN drop merchants.stripe_subscription_id and orders.stripe_payment_intent_id in a follow-up migration",
-      "lane": "in_flight",
+      "lane": "shipped",
       "home_lane": "in_flight",
-      "status": "todo",
+      "status": "shipped",
       "priority": "high",
       "owner_terminal": "unassigned",
       "gate": "green_self_merge",
       "blocked_on": null,
       "last_checkpoint": "2026-08-21",
-      "evidence": null,
-      "notes": "P1 · Source: audit R2; schema notes D2/D3 (ruling: columns stay until the code is gone). Ordering is load-bearing: the column drop is a separate, later migration. QUEUED 2026-08-21 into the W2 run order at position 4. The load-bearing ordering is unchanged and restated by the dispatch: code first (webhook route and the three @stripe/* deps out), THEN the column-drop migration authored as a file for Ivan to apply, both in one PR. Gate changed from its authored value by the authorizing-message exception (BOARD-SPEC.md, 2026-08-21): Ivan’s W2 dispatch of 2026-08-21 both carries the ruling and grants self-merge on green throughout, so the message wins over the stale JSON. Migrations remain authored-not-applied."
+      "evidence": {
+        "kind": "pr",
+        "ref": "#27",
+        "at": "2026-08-21"
+      },
+      "notes": "P1 · Source: audit R2; schema notes D2/D3 (ruling: columns stay until the code is gone). Ordering is load-bearing: the column drop is a separate, later migration. QUEUED 2026-08-21 into the W2 run order at position 4. The load-bearing ordering is unchanged and restated by the dispatch: code first (webhook route and the three @stripe/* deps out), THEN the column-drop migration authored as a file for Ivan to apply, both in one PR. Gate changed from its authored value by the authorizing-message exception (BOARD-SPEC.md, 2026-08-21): Ivan’s W2 dispatch of 2026-08-21 both carries the ruling and grants self-merge on green throughout, so the message wins over the stale JSON. Migrations remain authored-not-applied. SHIPPED 2026-08-21 in PR #27. Non-visual, so it ships on merge with the PR as evidence. GONE: app/api/webhooks/stripe/route.ts (123 lines), lib/stripe.ts (86 lines), the three @stripe/* dependencies, and the five STRIPE_* / NEXT_PUBLIC_STRIPE_* entries in .env.example. THE ORDERING RULE IS SATISFIED, not skipped: those two files were the ONLY readers or writers of merchants.stripe_subscription_id and orders.stripe_payment_intent_id — verified by grep across app/, lib/, components/ and types/ — which is exactly the condition schema notes D2/D3 set before the columns could go. 0006_drop_stripe_columns.sql is AUTHORED AND NOT APPLIED, and it must be applied AFTER this deploy, not before. FIXED ON THE WAY PAST, because a decommission that leaves the screens still naming the dead processor is half done: three admin confirmation dialogs in merchant-actions.tsx told the operator that suspending, cancelling or deleting a merchant would act on Stripe. The live cancel path has been Wompi for some time (app/api/admin/merchants/[id]/route.ts writes wompi_payment_source_id), so the copy was describing a system that no longer ran. TWO THINGS OUTSIDE THE REPO REMAIN, neither a code change and both Ivan’s: delete the /api/webhooks/stripe endpoint in the Stripe dashboard, since Stripe will keep POSTing to a route that now 404s, and remove the five vars from the Vercel project so a dead secret is not sitting in the environment. Recorded in .env.example where whoever sets up the project next will read it. ALSO FOUND: CLAUDE.md names merchants.stripe_customer_id and stripe_payment_method_id, and NEITHER EXISTS in the reconstructed schema. The doc is stale on that point; noted in the migration so nobody writes SQL from it."
     },
     {
       "id": "CODE-fix-order-items-type",
