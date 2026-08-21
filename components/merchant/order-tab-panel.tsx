@@ -102,7 +102,7 @@ export function OrderTabPanel({ order, tab, currentStep }: { order: Order; tab: 
             <div className="text-sm space-y-0.5 text-gray-700">
               <p className="font-semibold">{order.customer_name}</p>
               <p>{addr.address1}</p>
-              <p>{addr.city}, {addr.province} {addr.zip}</p>
+              <p>{[addr.city, addr.province].filter(Boolean).join(', ')}{addr.zip ? ` ${addr.zip}` : ''}</p>
               <p>{addr.country}</p>
               {order.customer_email && <p className="text-xs text-gray-400 pt-1">{order.customer_email}</p>}
             </div>
@@ -170,7 +170,7 @@ export function OrderTabPanel({ order, tab, currentStep }: { order: Order; tab: 
         <PhaseHeader done={false} title="Tu cotización está lista" description="Revisa el detalle de costos y aprueba el pago para que tu orden entre a la fila de preparación en bodega." />
         <div className={`${DL} mb-5`}>
           {order.shipping_cost_cop && order.shipping_cost_cop > 0 && <Row label="Envío LABLLD" value={formatCOP(order.shipping_cost_cop)} />}
-          {order.carrier && <Row label="Transportadora" value={order.carrier} />}
+          <Row label="Transportadora" value={order.carrier ?? 'Se asigna al despachar'} />
           {order.estimated_delivery && <Row label="Entrega estimada" value={order.estimated_delivery} />}
           <Row label="Total a pagar" value={formatCOP(order.fulfillment_cost ?? 0)} />
         </div>
@@ -198,6 +198,7 @@ export function OrderTabPanel({ order, tab, currentStep }: { order: Order; tab: 
         <div className={DL}>
           {order.shipped_at && <Row label="Fecha de pago" value={formatDate(order.shipped_at)} />}
           {order.wompi_transaction_id && <Row label="Referencia" value={order.wompi_transaction_id} />}
+          <Row label="Transportadora" value={order.carrier ?? 'Se asigna al despachar'} />
           <Row label="Total pagado" value={formatCOP(order.fulfillment_cost ?? 0)} />
         </div>
       </div>
@@ -212,18 +213,19 @@ export function OrderTabPanel({ order, tab, currentStep }: { order: Order; tab: 
         <div className={DL}>
           <Row label="Inicio de preparación" value={formatDate(order.updated_at)} />
           {order.estimated_delivery && <Row label="Salida estimada" value={order.estimated_delivery} />}
+          <Row label="Transportadora" value={order.carrier ?? 'Se asigna al despachar'} />
         </div>
       </div>
     )
   }
 
   if (tab === 'enviado') {
-    if (currentStep < 4) return <NotYet label="Enviado" rows={[{ label: 'Transportadora', value: '—' }, { label: 'Número de guía', value: '—' }]} />
+    if (currentStep < 4) return <NotYet label="Enviado" rows={[{ label: 'Transportadora', value: order.carrier ?? 'Se asigna al despachar' }, { label: 'Número de guía', value: '—' }]} />
     return (
       <div className="px-5 py-5">
         <PhaseHeader title="Tu pedido va en camino" description="Tu pedido salió de nuestra bodega y está en manos de la transportadora. Usa la guía para seguirlo en tiempo real." />
         <div className={`${DL} mb-5`}>
-          {order.carrier && <Row label="Transportadora" value={order.carrier} />}
+          <Row label="Transportadora" value={order.carrier ?? 'Se asigna al despachar'} />
           {order.tracking_number && <Row label="Número de guía" value={order.tracking_number} />}
           {order.shipped_at && <Row label="Despachado" value={formatDate(order.shipped_at)} />}
         </div>
@@ -241,6 +243,7 @@ export function OrderTabPanel({ order, tab, currentStep }: { order: Order; tab: 
         <PhaseHeader title="Pedido entregado" description="Tu pedido fue entregado exitosamente." />
         <div className={DL}>
           {order.customer_name && <Row label="Recibido por" value={order.customer_name} />}
+          <Row label="Transportadora" value={order.carrier ?? 'Se asigna al despachar'} />
           {order.tracking_number && <Row label="Guía" value={order.tracking_number} />}
         </div>
       </div>

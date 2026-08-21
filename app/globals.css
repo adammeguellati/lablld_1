@@ -183,3 +183,18 @@
   .el-0, .el-1, .el-2, .el-3, .el-4,
   .anim-overlay, .anim-panel { animation: none !important; }
 }
+/* Order-flow nav dot. SCREENS.md section 6 asks for an 8x8 #34C759 dot on the
+   RIGHT EDGE of the nav item with a 1.4s pulse, where the code had a static
+   emerald dot on the icon's top-right corner. */
+@keyframes omPulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(52, 199, 89, .45); }
+  50% { opacity: .55; box-shadow: 0 0 0 5px rgba(52, 199, 89, 0); }
+}
+
+.om-pulse {
+  animation: omPulse 1.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .om-pulse { animation: none; }
+}

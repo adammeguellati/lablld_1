@@ -1,6 +1,8 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import Link from 'next/link'
+import { Plus } from 'lucide-react'
 import { MerchantOrdersTable } from '@/components/merchant/orders-table'
 import { signLabelUrl } from '@/lib/storage'
 import type { Order } from '@/types'
@@ -30,13 +32,27 @@ export default async function MerchantOrdersPage() {
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-2xl tracking-[0]">Órdenes</h1>
-        <p className="text-sm text-gray-500 mt-0.5">
-          {orders.length > 0 ? `${orders.length} ${orders.length === 1 ? 'orden en total' : 'órdenes en total'}` : 'Sin órdenes aún'}
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-6">
+        <div>
+          <h1 className="text-[36px] font-normal leading-[1.12] tracking-[0]">Órdenes</h1>
+          <p className="mt-1 text-[15px] text-[#6E6E73]">
+            {orders.length > 0
+              ? `${orders.length} ${orders.length === 1 ? 'orden en total' : 'órdenes en total'}`
+              : 'Sin órdenes aún'}
+          </p>
+        </div>
+        <Link
+          href="/orders/new"
+          className="flex flex-none items-center gap-2.5 rounded-[15px] bg-[#1D1E20] px-6 py-3 text-[15px] font-medium text-white transition-colors hover:bg-[#F97316]"
+        >
+          <Plus className="h-[17px] w-[17px]" strokeWidth={2} />
+          Crear orden
+        </Link>
       </div>
-      <MerchantOrdersTable orders={orders} />
+
+      <div className="mt-[22px]">
+        <MerchantOrdersTable orders={orders} />
+      </div>
     </div>
   )
 }

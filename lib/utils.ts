@@ -9,11 +9,29 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatDate(dateString: string): string {
-  return new Intl.DateTimeFormat('en-US', {
+  // Two defects fixed together, both visible on the orders list.
+  // 1. The locale was en-US in a Colombian Spanish app, so every date read
+  //    "Aug 11, 2026".
+  // 2. A date-only string parses as UTC midnight, which renders as the PREVIOUS
+  //    day everywhere west of UTC, including all of Colombia at UTC-5. Anchor
+  //    those to local time; timestamps already carry their own offset.
+  const iso = /^\d{4}-\d{2}-\d{2}$/.test(dateString) ? `${dateString}T00:00:00` : dateString
+  return new Intl.DateTimeFormat('es-CO', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
-  }).format(new Date(dateString))
+  }).format(new Date(iso))
+}
+
+// Compact variant for dense rows. "12 de ago de 2026" wraps inside the orders
+// list's 92px id tile; es-CO is day-first so the numeric form is unambiguous.
+export function formatDateShort(dateString: string): string {
+  const iso = /^\d{4}-\d{2}-\d{2}$/.test(dateString) ? `${dateString}T00:00:00` : dateString
+  return new Intl.DateTimeFormat('es-CO', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(new Date(iso))
 }
 
 export function formatCOP(amount: number): string {
